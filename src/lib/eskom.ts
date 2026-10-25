@@ -148,7 +148,38 @@ export function buildModel(file: EskomFile) {
   const capLast = cap.at(-1)
   const capFresh = !!(capLast && supply.length && parseT(supply.at(-1)!.t).getTime() - parseT(capLast.t).getTime() < 14 * 864e5)
 
+  // ── per-day rollups for the bento cards ───────────────────────
+  const byDay = new Map<string, { date: string; peakerMWh: number; peakerHours: number }>()
+  supply.forEach((r) => {
+    const date = r.t.slice(0, 10)
+    const d = byDay.get(date) ?? { date, peakerMWh: 0, peakerHours: 0 }
+    const pk = pos(r.eskomOcgt) + pos(r.eskomGas) + pos(r.ippOcgt)
+    d.peakerMWh += pk
+    if (pk > 50) d.peakerHours++
+    byDay.set(date, d)
+  })
+  const peakerDays = [...byDay.values()]
+  const fByDay = new Map<string, DemandRow>()
+  forecast.forEach((r) => {
+    const date = r.t.slice(0, 10)
+    const cur = fByDay.get(date)
+    if (!cur || v(r.forecast) > v(cur.forecast)) fByDay.set(date, r)
+  })
+  const forecastPeaks = [...fByDay.values()].slice(0, 3)
+  const reSplit = {
+    wind: supply.reduce((a, r) => a + pos(r.wind), 0),
+    solar: supply.reduce((a, r) => a + pos(r.pv) + pos(r.csp), 0),
+    other: supply.reduce((a, r) => a + pos(r.otherRe), 0),
+  }
+  const outageMax = outages.length ? Math.max(...outages.map((r) => v(r.unplanned))) : 0
+  const demandWeekAgo = actual.length > 168 ? actual[actual.length - 169] : actual[0]
+
   return {
+    peakerDays,
+    forecastPeaks,
+    reSplit,
+    outageMax,
+    demandWeekAgo,
     generatedAt: file.generatedAt,
     portal: file.portal,
     supplyRange: supply.length ? { from: supply[0].t, to: supply.at(-1)!.t } : null,
@@ -198,7 +229,7 @@ export function loadShift(m: GridModel, mw: number) {
   }
 }
 
-export type Recommendation = { id: string; priority: "High" | "Medium" | "Info"; title: string; metric: string; body: string; icon: "shift" | "flame" | "wrench" | "battery" | "sun" }
+export type Recommendation = { id: string; priority: "High" | "Medium" | "Info"; title: string; metric: string; short: string; body: string; icon: "shift" | "flame" | "wrench" | "battery" | "sun" }
 
 export function recommendations(m: GridModel): Recommendation[] {
   const recs: Recommendation[] = []
@@ -209,6 +240,7 @@ export function recommendations(m: GridModel): Recommendation[] {
     icon: "shift",
     title: "Flatten the evening peak",
     metric: `+${fmtGW(ramp)} at ${m.peakHour.label}`,
+    short: "Move water heating & pumping into 10:00–15:00",
     body: `Average demand peaks at ${m.peakHour.label}, ${fmtGW(ramp)} above the midday trough, just as solar output fades. Water heating, pumping and batch processes are the easiest loads to move into 10:00–15:00.`,
   })
   if (m.peakerEnergy > 0) {
@@ -224,6 +256,7 @@ export function recommendations(m: GridModel): Recommendation[] {
       icon: "flame",
       title: "Cut diesel peaker burn",
       metric: `${fmtGWh(m.peakerEnergy)} in ${Math.round(m.days)} days`,
+      short: `${m.peakerHours} h of OCGT ≈ ${fmtRand(m.peakerEnergy * 1000 * PEAKER_COST_R_PER_KWH)}*`,
       body: `OCGT and gas units ran for ${m.peakerHours} hours, mostly around ${topHours.join(", ")}. At about R${PEAKER_COST_R_PER_KWH}/kWh (assumed) that's roughly ${fmtRand(m.peakerEnergy * 1000 * PEAKER_COST_R_PER_KWH)}. Storage and demand response are cheaper firm capacity.`,
     })
   }
@@ -236,6 +269,7 @@ export function recommendations(m: GridModel): Recommendation[] {
       icon: "wrench",
       title: "Recover unplanned losses",
       metric: `${fmtGW(m.outageAvg)} offline (avg)`,
+      short: "1 GW recovered ≈ 168 GWh a week",
       body: `Unplanned and other outages took about ${fmtGW(m.outageAvg)} offline on average. Recovering just 1 GW adds ~168 GWh a week${ratio ? `, about ${ratio.toFixed(1)}× this week's peaker output` : ""}.`,
     })
   }
@@ -247,6 +281,7 @@ export function recommendations(m: GridModel): Recommendation[] {
       icon: "battery",
       title: "Pumped storage round trip",
       metric: `${Math.round(eff * 100)}% returned`,
+      short: "Pump on midday solar, not night-time coal",
       body: `Pumped storage returned ${fmtGWh(m.pumpedOut)} for ${fmtGWh(m.pumpedIn)} pumped. Pumping at midday on surplus solar, instead of at night on coal, raises its renewable value.`,
     })
   }

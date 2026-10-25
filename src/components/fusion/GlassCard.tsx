@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { ArrowUpRight, FileDown, LayoutDashboard, Mail } from "lucide-react"
+import { ArrowUpRight, LayoutDashboard, Mail } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { GithubIcon, LinkedinIcon } from "@/components/ui/brand-icons"
@@ -10,7 +10,6 @@ const ICONS = {
   email: Mail,
   linkedin: LinkedinIcon,
   github: GithubIcon,
-  cv: FileDown,
   internal: LayoutDashboard,
 } as const
 
@@ -43,7 +42,6 @@ function CardLinkButton({ link, primary }: { link: CardLink; primary: boolean })
       href={link.href}
       className={cls}
       {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-      {...(link.kind === "cv" ? { download: true } : {})}
     >
       {inner}
       {external && <ArrowUpRight className="size-3.5 opacity-60" aria-hidden />}
@@ -111,6 +109,23 @@ export function GlassCard({
             </li>
           ))}
         </ul>
+      )}
+
+      {card.chipGroups && (
+        <dl className="mt-4 space-y-2.5">
+          {card.chipGroups.map((g) => (
+            <div key={g.label} className="grid grid-cols-[88px_1fr] items-start gap-2">
+              <dt className="pt-1.5 font-mono text-[10px] tracking-[0.1em] text-haze uppercase">{g.label}</dt>
+              <dd className="flex flex-wrap gap-1.5">
+                {g.items.map((c) => (
+                  <span key={c} className="rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1 text-[12.5px] text-ink/90">
+                    {c}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          ))}
+        </dl>
       )}
 
       {card.stats && (

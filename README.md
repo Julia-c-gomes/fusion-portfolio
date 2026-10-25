@@ -5,11 +5,11 @@ A chemical-engineering portfolio told through controlled nuclear fusion, plus a 
 - **Portfolio (`/#/`)**: a scroll-driven canvas scene. Deuterium appears, tritium joins, the plasma heats and is magnetically confined, the nuclei fuse, and a neutron carries 17.6 MeV away. Frosted info cards appear after each transition. The rail on the right shows progress and jumps to any stage.
 - **Grid dashboard (`/#/grid`)**: generation mix, demand vs forecast, outages and diesel peaker use from the [Eskom Data Portal](https://www.eskom.co.za/dataportal/). It also has a load-shift what-if and recommendations computed from the data. It fits one screen on desktop, with no scrollbars.
 
-Stack: Vite · React 19 · TypeScript · Tailwind CSS 4 · shadcn structure (`src/components/ui`) · framer-motion · recharts · lucide-react.
+Stack: Vite · React 19 · TypeScript · Tailwind CSS 4 · shadcn structure (`src/components/ui`) · framer-motion · lucide-react. Dashboard charts are hand-drawn SVG (bento design adapted from Finance Bento by vasnev.art).
 
 ## Edit your content
 
-Everything you'll want to change is in **`src/content/portfolio.ts`**: name, links, and every card. Put your CV at `public/cv.pdf`.
+Everything you'll want to change is in **`src/content/portfolio.ts`**: name, links, and every card.
 
 ## Run locally
 

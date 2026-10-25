@@ -8,23 +8,23 @@
  */
 
 export const profile = {
-  name: "Your Name",
-  initials: "YN",
+  name: "Julia Gomes",
+  initials: "JG",
   role: "Chemical Engineer",
   location: "Cape Town, South Africa",
   headline: "Engineering energy,",
   headlineAccent: "one reaction at a time.",
   intro:
-    "Chemical engineering graduate turning process thinking into cleaner, more reliable energy systems.",
-  email: "you@example.com",
-  linkedin: "https://www.linkedin.com/in/your-handle",
-  github: "https://github.com/your-handle",
-  /** Put your CV in /public (e.g. public/cv.pdf) and keep this path. */
-  cvUrl: "./cv.pdf",
+    "Chemical engineering graduate focused on process design, optimisation and data analysis, from the electrochemistry lab to Python.",
+  email: "jewlcross@gmail.com",
+  linkedin: "https://www.linkedin.com/in/julia-c-gomes",
+  github: "https://github.com/Julia-c-gomes",
 }
 
 export type CardStat = { value: string; label: string }
-export type CardLink = { label: string; href: string; kind: "email" | "linkedin" | "github" | "cv" | "internal" }
+export type CardLink = { label: string; href: string; kind: "email" | "linkedin" | "github" | "internal" }
+
+export type ChipGroup = { label: string; items: string[] }
 
 export type StageCard = {
   eyebrow: string
@@ -32,6 +32,8 @@ export type StageCard = {
   body?: string
   bullets?: string[]
   chips?: string[]
+  /** Labelled rows of chips (e.g. skills by category) */
+  chipGroups?: ChipGroup[]
   stats?: CardStat[]
   links?: CardLink[]
 }
@@ -57,13 +59,13 @@ export const stages: Stage[] = [
     physics: "Fuel · deuterium, extracted from seawater",
     card: {
       eyebrow: "01 · Background",
-      title: "A process engineer at heart",
+      title: "Process, optimisation & data",
       body:
-        "I grew up in Cape Town, fascinated by how raw materials become energy, fuel and food. I like problems where thermodynamics, data and people meet: plants that need to run cleaner, cheaper and more safely.",
+        "Chemical Engineering graduate with a strong academic record and a focus on process design, optimisation and data analysis. Experienced in electrochemical lab work and Python-driven data interpretation, and kept high standards while working 20+ hours a week.",
       stats: [
-        { value: "BSc(Eng)", label: "Chemical Eng." },
-        { value: "4+", label: "Major projects" },
-        { value: "ZA", label: "Based in CPT" },
+        { value: "77%", label: "Weighted GPA" },
+        { value: "3×", label: "Dean's Merit List" },
+        { value: "20 h", label: "Worked weekly" },
       ],
     },
   },
@@ -73,12 +75,12 @@ export const stages: Stage[] = [
     physics: "³H · tritium joins · 1p + 2n",
     card: {
       eyebrow: "02 · Education",
-      title: "University of Cape Town",
-      body: "BSc in Chemical Engineering, specialising in energy and process systems.",
+      title: "BSc Chemical Engineering, UCT",
+      body: "University of Cape Town, 2022–2025. Graduated with a 77% year-weighted GPA.",
       bullets: [
-        "Final-year design: green hydrogen production plant",
-        "Research: CO₂ capture solvent performance",
-        "Dean's Merit List · ECSA-accredited programme",
+        "Dean's Merit List, 2023–2025",
+        "Thesis: plasticisers and water-vapour permeability of carrageenan bioplastics",
+        "Coursework: Renewable Energy, Chemical Engineering Design, Data Science & System Dynamics",
       ],
     },
   },
@@ -88,18 +90,12 @@ export const stages: Stage[] = [
     physics: "Plasma · 150 million °C",
     card: {
       eyebrow: "03 · Toolkit",
-      title: "Heat, mass and data",
-      chips: [
-        "Aspen Plus / HYSYS",
-        "Process design & P&IDs",
-        "Mass & energy balances",
-        "Python · pandas",
-        "MATLAB",
-        "HAZOP & safety",
-        "Techno-economics",
-        "Power BI",
-        "Reactor design",
-        "Energy systems",
+      title: "Lab bench to code",
+      chipGroups: [
+        { label: "Code", items: ["Python", "Scilab", "JavaScript", "SQL", "LaTeX"] },
+        { label: "Tools", items: ["Aspen Plus", "Microsoft Office", "VS Code"] },
+        { label: "Lab", items: ["Cyclic voltammetry", "Electrochemical setup", "Centrifuge", "Press filter"] },
+        { label: "Languages", items: ["English", "French", "Afrikaans", "Portuguese"] },
       ],
     },
   },
@@ -155,7 +151,6 @@ export const stages: Stage[] = [
         { label: "Email me", href: `mailto:${profile.email}`, kind: "email" },
         { label: "LinkedIn", href: profile.linkedin, kind: "linkedin" },
         { label: "GitHub", href: profile.github, kind: "github" },
-        { label: "Download CV", href: profile.cvUrl, kind: "cv" },
       ],
     },
   },
