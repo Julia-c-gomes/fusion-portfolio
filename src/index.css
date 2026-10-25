@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The site is dark-only (space + plasma), so .dark mirrors :root. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Brand tokens */
+  --color-void: var(--void);
+  --color-ink: var(--ink);
+  --color-haze: var(--haze);
+  --color-plasma: var(--plasma);
+  --color-ember: var(--ember);
+  --color-flare: var(--flare);
+  --color-aether: var(--aether);
+  --color-ion: var(--ion);
+
+  /* shadcn semantic tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* From the integration prompt (fixed: the original referenced `var(----x)`) */
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root,
+.dark {
+  --void: #05040b;
+  --ink: #f4f1ff;
+  --haze: #aaa4c8;
+  --plasma: #ff6b4a;
+  --ember: #ffb15c;
+  --flare: #ffe7c2;
+  --aether: #a97cff;
+  --ion: #7cc8ff;
+
+  --radius: 0.875rem;
+  --background: var(--void);
+  --foreground: var(--ink);
+  --card: rgb(255 255 255 / 0.05);
+  --card-foreground: var(--ink);
+  --popover: #0f0c1c;
+  --popover-foreground: var(--ink);
+  --primary: var(--plasma);
+  --primary-foreground: #1a0904;
+  --secondary: rgb(255 255 255 / 0.08);
+  --secondary-foreground: var(--ink);
+  --muted: rgb(255 255 255 / 0.06);
+  --muted-foreground: var(--haze);
+  --accent: rgb(169 124 255 / 0.14);
+  --accent-foreground: var(--ink);
+  --destructive: #f05252;
+  --destructive-foreground: var(--color-red-400);
+  --border: rgb(255 255 255 / 0.12);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: var(--ember);
+
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-400);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-400);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-400);
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    background: var(--void);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: rgb(255 107 74 / 0.35);
+    color: white;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  /* Frosted glass used by info cards, nav and dashboard panels */
+  .glass {
+    background:
+      linear-gradient(140deg, rgb(255 255 255 / 0.11), rgb(255 255 255 / 0.03) 45%, rgb(255 140 100 / 0.05)),
+      rgb(10 8 22 / 0.42);
+    border: 1px solid rgb(255 255 255 / 0.13);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      0 24px 60px -24px rgb(0 0 0 / 0.7);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+  .glass-soft {
+    background: rgb(255 255 255 / 0.035);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .text-plasma-gradient {
+    background: linear-gradient(100deg, var(--flare), var(--ember) 40%, var(--plasma) 75%, var(--aether));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Chart roles (dark surface only). Categorical slots 1–5 validated for the
+   dark panel surface #0c0a17 with the dataviz palette validator. */
+.viz-root {
+  --viz-surface: #0c0a17;
+  --viz-ink: #f0edff;
+  --viz-muted: #9f99c0;
+  --viz-grid: rgb(255 255 255 / 0.06);
+  --viz-cursor: rgb(255 255 255 / 0.35);
+  --viz-forecast: #ffb15c;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+}
+.viz-root .glass-soft {
+  background: rgb(12 10 23 / 0.72);
+}

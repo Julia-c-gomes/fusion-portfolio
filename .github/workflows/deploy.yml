@@ -1,0 +1,60 @@
+name: Build & deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Refresh the Eskom data every 6 hours (UTC). Eskom updates most files daily.
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write # commit refreshed public/data/eskom.json
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Refresh Eskom data
+        # Never block a deploy on Eskom's portal; the script keeps the last good data.
+        continue-on-error: true
+        run: node scripts/fetch-eskom.mjs
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/eskom.json
+          git diff --cached --quiet || (git commit -m "chore(data): refresh Eskom data [skip ci]" && git push)
+
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
