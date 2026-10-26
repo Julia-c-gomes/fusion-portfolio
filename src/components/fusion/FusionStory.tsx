@@ -1,9 +1,8 @@
 import { motion, useReducedMotion } from "framer-motion"
-import { ArrowDown, Atom } from "lucide-react"
+import { ArrowDown } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
 import { ArrowPillButton } from "@/components/ui/arrow-pill-button"
-import { BadgePill } from "@/components/ui/badge-pill"
 import { GridLines } from "@/components/ui/grid-lines"
 import { profile, stages, type ReactionPart } from "@/content/portfolio"
 import { FusionEngine } from "./fusion-engine"
@@ -145,19 +144,13 @@ export function FusionStory() {
           animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : -30 }}
           transition={{ duration: heroVisible ? 0.7 : 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible">
-            <BadgePill icon={<Atom className="size-4 text-aether" aria-hidden />}>
-              {profile.role}
-              <span className="hidden sm:inline"> · {profile.location.split(",")[0]}</span>
-            </BadgePill>
-          </motion.div>
           <motion.h1
             id="hero-title"
             custom={1}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="mt-5 font-display text-[44px] leading-[0.98] tracking-[-0.01em] text-ink sm:text-6xl lg:text-[clamp(50px,4.5vw,84px)]"
+            className="font-display text-[44px] leading-[0.98] tracking-[-0.01em] text-ink sm:text-6xl lg:text-[clamp(48px,4.2vw,80px)]"
           >
             {profile.headline}{" "}
             <em className="text-plasma-gradient block pr-1">{profile.headlineAccent}</em>
@@ -179,7 +172,7 @@ export function FusionStory() {
             className={heroVisible ? "pointer-events-auto mt-8 hidden lg:block" : "mt-8 hidden lg:block"}
           >
             <ArrowPillButton
-              href="#about"
+              href="#education"
               onClick={(e) => {
                 e.preventDefault()
                 goTo(1)
@@ -198,7 +191,7 @@ export function FusionStory() {
           transition={{ duration: 0.6, delay: heroVisible ? 0.9 : 0 }}
         >
           <ArrowPillButton
-            href="#about"
+            href="#education"
             onClick={(e) => {
               e.preventDefault()
               goTo(1)

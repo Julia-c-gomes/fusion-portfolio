@@ -12,9 +12,9 @@ export const profile = {
   role: "Graduate Chemical Engineer",
   location: "Cape Town, South Africa",
   headline: "Engineering energy,",
-  headlineAccent: "one reaction at a time.",
+  headlineAccent: "balancing the equation.",
   intro:
-    "Chemical engineering graduate focused on process design, optimisation and data analysis, from the electrochemistry lab to Python.",
+    "Chemical engineering graduate focused on process design, optimisation and data analysis, from electrochemistry applications to extracting value from data.",
   email: "jewlcross@gmail.com",
   linkedin: "https://www.linkedin.com/in/julia-c-gomes",
   github: "https://github.com/Julia-c-gomes",
@@ -23,7 +23,8 @@ export const profile = {
 export type CardStat = { value: string; label: string }
 export type CardLink = { label: string; href: string; kind: "email" | "linkedin" | "github" | "internal" }
 
-export type ChipGroup = { label: string; items: string[] }
+/** color: a light tint for this group's chips (any CSS colour) */
+export type ChipGroup = { label: string; items: string[]; color?: string }
 
 export type StageCard = {
   eyebrow: string
@@ -65,35 +66,35 @@ export const stages: Stage[] = [
     reaction: [D],
   },
   {
-    id: "about",
-    label: "About",
+    id: "education",
+    label: "Education",
     physics: "Fuel · about 1 in 6,400 hydrogen atoms in seawater is deuterium",
     reaction: [D],
     card: {
-      eyebrow: "01 · Background",
-      title: "Process, optimisation & data",
-      body:
-        "Chemical Engineering graduate with a strong academic record and a focus on process design, optimisation and data analysis. Experienced in electrochemical lab work and Python-driven data interpretation, and kept high standards while working 20+ hours a week.",
-      stats: [
-        { value: "77%", label: "Weighted GPA" },
-        { value: "3×", label: "Dean's Merit List" },
-        { value: "20 h", label: "Worked weekly" },
-      ],
-    },
-  },
-  {
-    id: "education",
-    label: "Education",
-    physics: "Tritium joins · 1 proton, 2 neutrons, 1 electron",
-    reaction: [D, "+", T],
-    card: {
-      eyebrow: "02 · Education",
+      eyebrow: "01 · Education",
       title: "BSc Chemical Engineering, UCT",
-      body: "University of Cape Town, 2022–2025. Graduated with a 77% year-weighted GPA.",
+      body: "University of Cape Town, 2022–2025. Graduated with 77% in final year.",
       bullets: [
         "Dean's Merit List, 2023–2025",
         "Thesis: plasticisers and water-vapour permeability of carrageenan bioplastics",
         "Coursework: Renewable Energy, Chemical Engineering Design, Data Science & System Dynamics",
+      ],
+    },
+  },
+  {
+    id: "background",
+    label: "Background",
+    physics: "Tritium joins · 1 proton, 2 neutrons, 1 electron",
+    reaction: [D, "+", T],
+    card: {
+      eyebrow: "02 · Background",
+      title: "Driven by a challenge",
+      body:
+        "I averaged 77% in each of the last three years of my degree, with a distinction in Renewable Energy, while working 20 hours a week. As an electrochemistry research assistant at UCT I ran lab experiments and taught myself Python to make sense of the data. Outside, I hold an A & B skydiving licence and love surfing, trail running and free diving.",
+      stats: [
+        { value: "77%", label: "3 years running" },
+        { value: "Distinction", label: "Renewable Energy" },
+        { value: "20 h", label: "Worked weekly" },
       ],
     },
   },
@@ -106,10 +107,10 @@ export const stages: Stage[] = [
       eyebrow: "03 · Toolkit",
       title: "Lab bench to code",
       chipGroups: [
-        { label: "Code", items: ["Python", "Scilab", "JavaScript", "SQL", "LaTeX"] },
-        { label: "Tools", items: ["Aspen Plus", "Microsoft Office", "VS Code"] },
-        { label: "Lab", items: ["Cyclic voltammetry", "Electrochemical setup", "Centrifuge", "Press filter"] },
-        { label: "Languages", items: ["English", "French", "Afrikaans", "Portuguese"] },
+        { label: "Code", color: "#A97CFF", items: ["Python", "Scilab", "JavaScript", "SQL", "LaTeX"] },
+        { label: "Tools", color: "#7CC8FF", items: ["Aspen Plus", "Microsoft Office", "VS Code"] },
+        { label: "Lab", color: "#FFB15C", items: ["Cyclic voltammetry", "Electrochemical setup", "Centrifuge", "Press filter"] },
+        { label: "Languages", color: "#7CEBC4", items: ["English", "French", "Afrikaans", "Portuguese"] },
       ],
     },
   },

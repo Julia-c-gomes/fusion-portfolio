@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   DayCard,
   ForecastTile,
-  MixCard,
   OptimiseCard,
+  MixCard,
   OutageTile,
-  PeakersCard,
   PeakTile,
   RenewTile,
   StreamCard,
   type StreamMode,
 } from "@/components/dashboard/bento-cards"
+import { BalanceCard } from "@/components/dashboard/BalanceCard"
 import { Seg, Tip, type TipRow, type TipState } from "@/components/ui/finance-bento"
 import { buildModel, fmtTime, type EskomFile } from "@/lib/eskom"
 import { cn } from "@/lib/utils"
@@ -99,13 +99,13 @@ export default function Dashboard() {
             <RenewTile m={m} className="fb-kpi" index={3} />
             <StreamCard m={m} mode={mode} onTip={onTip} onHide={onHide} className="fb-s8" index={4} />
             <MixCard m={m} className="fb-s4 fb-half" index={5} />
-            <DayCard m={m} shiftMW={shiftMW} onTip={onTip} onHide={onHide} className="fb-s5" index={6} />
+            <DayCard m={m} shiftMW={shiftMW} onTip={onTip} onHide={onHide} className="fb-s4 fb-half" index={6} />
             <OptimiseCard m={m} shiftMW={shiftMW} onShift={setShiftMW} className="fb-s4 fb-half" index={7} />
-            <PeakersCard m={m} onTip={onTip} onHide={onHide} className="fb-s3 fb-half" index={8} />
+            <BalanceCard eskomPerPerson={m.usedPerPerson} className="fb-s4 fb-half" index={8} />
           </div>
         ) : (
           <div className="fb-grid" aria-hidden>
-            {["fb-kpi", "fb-kpi", "fb-kpi", "fb-kpi", "fb-s8", "fb-s4", "fb-s5", "fb-s4", "fb-s3"].map((c, i) => (
+            {["fb-kpi", "fb-kpi", "fb-kpi", "fb-kpi", "fb-s8", "fb-s4", "fb-s4", "fb-s4", "fb-s4"].map((c, i) => (
               <div key={i} className={cn(c, "animate-pulse rounded-[28px] bg-white/[0.06]")} />
             ))}
           </div>

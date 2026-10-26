@@ -115,10 +115,20 @@ export function GlassCard({
         <dl className="mt-4 space-y-2.5">
           {card.chipGroups.map((g) => (
             <div key={g.label} className="grid grid-cols-[88px_1fr] items-start gap-2">
-              <dt className="pt-1.5 font-mono text-[10px] tracking-[0.1em] text-haze uppercase">{g.label}</dt>
+              <dt className="pt-1.5 font-mono text-[10px] tracking-[0.1em] uppercase" style={{ color: g.color ?? "var(--haze)" }}>
+                {g.label}
+              </dt>
               <dd className="flex flex-wrap gap-1.5">
                 {g.items.map((c) => (
-                  <span key={c} className="rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1 text-[12.5px] text-ink/90">
+                  <span
+                    key={c}
+                    className="rounded-full border px-2.5 py-1 text-[12.5px] text-ink"
+                    style={
+                      g.color
+                        ? { background: `color-mix(in srgb, ${g.color} 18%, transparent)`, borderColor: `color-mix(in srgb, ${g.color} 45%, transparent)` }
+                        : { background: "rgb(255 255 255 / 0.06)", borderColor: "rgb(255 255 255 / 0.12)" }
+                    }
+                  >
                     {c}
                   </span>
                 ))}
@@ -129,11 +139,11 @@ export function GlassCard({
       )}
 
       {card.stats && (
-        <dl className="mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
+        <dl className="mt-5 grid grid-cols-3 gap-x-4 gap-y-2 border-t border-white/10 pt-4">
           {card.stats.map((s) => (
             <div key={s.label}>
               <dt className="sr-only">{s.label}</dt>
-              <dd className="font-display text-2xl leading-none text-flare">{s.value}</dd>
+              <dd className="font-display text-[21px] leading-none text-flare sm:text-2xl">{s.value}</dd>
               <dd className="mt-1.5 text-[12px] leading-tight text-haze">{s.label}</dd>
             </div>
           ))}

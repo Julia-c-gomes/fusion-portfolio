@@ -1,4 +1,4 @@
-import { PEAKER_COST_R_PER_KWH } from "@/lib/eskom"
+import { MEGAFLEX, PEAKER_COST_R_PER_KWH } from "@/lib/eskom"
 
 /** What each dashboard card shows: where the data comes from, how it's computed, why it matters. */
 export type CardInfo = { source: string; how: string; why: string }
@@ -52,9 +52,14 @@ export const INFO = {
     how: `For every evening-peak hour (17:00–21:00) in the data, shifted load can replace peaker output up to what actually ran: min(peaker MW, shifted MW). That is summed, scaled to a 7-day week and costed at R${PEAKER_COST_R_PER_KWH}/kWh (an assumption). Peak cut = shifted MW ÷ average demand in the peak hour. Recommendations are rule-based checks on the same data.`,
     why: "Moving flexible load (water heating, pumping, batch processes) is the cheapest “new capacity”: it avoids diesel without building anything. Simplification: it assumes midday has spare supply and energy moves 1:1.",
   },
-  peakers: {
-    source: `${BUILD_UP} Eskom OCGT + Eskom gas + dispatchable IPP OCGT.`,
-    how: "Each day's hourly peaker output summed into energy (GWh). “Hours running” counts hours above 50 MW. The latest day is highlighted.",
-    why: "Open-cycle gas turbines run on diesel: the most expensive and most polluting power on the grid. Fewer peaker hours means cheaper, cleaner supply.",
+  bill: {
+    source: `${MEGAFLEX.source}, energy charge excl. VAT. Peak ${MEGAFLEX.high.peak} / standard ${MEGAFLEX.high.standard} c/kWh in June–August; peak ${MEGAFLEX.low.peak} / standard ${MEGAFLEX.low.standard} c/kWh in September–May.`,
+    how: "Megaflex charges more for the same kWh at peak times. Weekday peak hours are 17:00–20:00 in winter (June–August) and 18:00–21:00 the rest of the year; 10:00–15:00 is always “standard”. Moving load from 17:00–21:00 into 10:00–15:00 therefore saves (peak rate − standard rate) for three of the four evening hours, and nothing for the fourth (already standard). Worked example: a factory moving 1 MW for those 4 hours saves 1 000 kW × 3 h × (741.81 − 185.46) c ≈ R16 700 per winter weekday (≈ R4.17 per kWh moved), or 1 000 × 3 × (307.86 − 173.08) c ≈ R4 000 per weekday Sep–May (≈ R1.01/kWh). Over a year that's about R1.9 million per MW shifted. The big number scales this to the slider's MW for the current season, weekdays only.",
+    why: "This is the business case that makes customers actually move load, or install batteries to do it for them (GreenCape's “arbitrage and peak shaving”). It's separate from the grid-side diesel saving: one is money customers keep, the other is fuel Eskom doesn't burn. Network demand charges and public holidays are ignored here, and only customers on time-of-use tariffs see this saving.",
+  },
+  balance: {
+    source: "Assumptions only, after David MacKay, “Sustainable Energy – without the hot air” (2008). South African inputs: Stats SA population (63.1 m), land area, DWS river runoff (≈49 km³/yr), Stellenbosch wave data (≈25–40 kW/m), average sunshine ≈5.5 kWh/m²/day. The grid marker is the only Eskom figure.",
+    how: "All of MacKay's categories, each a simple formula, e.g. car = km per day ÷ km per litre × kWh per litre. Renewables = the share of land, sea or coast you'd build on × a typical power per m² (wind ≈2 W/m², solar farms ≈12 W/m²) ÷ population. Open the balance sheet to see and change every assumption.",
+    why: "It turns national energy into a personal scale you can reason about: how much a lifestyle uses, and whether South Africa's sun, wind and water could cover it. “Optimistic generation” assumes we build on the stated areas; it isn't today's output. “Average consumption” is for a typical car owner.",
   },
 } satisfies Record<string, CardInfo>

@@ -41,6 +41,9 @@ export type EskomFile = {
 
 /** ASSUMPTION — marginal cost of diesel-fired OCGT energy, R/kWh. Edit to taste. */
 export const PEAKER_COST_R_PER_KWH = 6
+/** Stats SA mid-year population estimate, July 2025 (P0302). */
+export const POPULATION = 63_100_000
+
 /** Evening peak window used for load-shift maths (hour-beginning, inclusive). */
 export const PEAK_HOURS = [17, 18, 19, 20]
 /** Midday solar window loads are shifted into. */
@@ -174,7 +177,12 @@ export function buildModel(file: EskomFile) {
   const outageMax = outages.length ? Math.max(...outages.map((r) => v(r.unplanned))) : 0
   const demandWeekAgo = actual.length > 168 ? actual[actual.length - 169] : actual[0]
 
+  // per person, per day (kWh): energy over the window ÷ days ÷ population
+  const perDay = (mwh: number, d: number) => (d ? (mwh * 1000) / d / POPULATION : 0)
+  const usedPerPerson = perDay(actual.reduce((a, r) => a + v(r.demand), 0), actual.length / 24)
+
   return {
+    usedPerPerson,
     peakerDays,
     forecastPeaks,
     reSplit,
@@ -286,4 +294,41 @@ export function recommendations(m: GridModel): Recommendation[] {
     })
   }
   return recs
+}
+
+/**
+ * Eskom Megaflex 2026/27 active energy charges, c/kWh excl. VAT
+ * (Schedule of Standard Prices from 1 April 2026, Table 1: transmission zone
+ * > 900 km i.e. Cape Town, supply ≥ 500 V & < 66 kV). Only the energy charge
+ * changes with time of day; demand and fixed charges are left out.
+ */
+export const MEGAFLEX = {
+  source: "Eskom Schedule of Standard Prices 2026/27, Megaflex, Cape Town zone (> 900 km), 500 V–66 kV",
+  high: { peak: 741.81, standard: 185.46, offpeak: 123.64 }, // June–August
+  low: { peak: 307.86, standard: 173.08, offpeak: 123.64 }, // September–May
+  /** weekday peak hours (hour-beginning); 10:00–15:00 is standard in both seasons */
+  peakHours: { high: [6, 7, 17, 18, 19], low: [7, 8, 18, 19, 20] },
+  weekdays: { high: 65.7, low: 195 }, // ≈ weekdays per season (92 and 273 days × 5/7)
+}
+export type Season = "high" | "low"
+export const seasonOf = (d = new Date()) => (d.getMonth() >= 5 && d.getMonth() <= 7 ? "high" : "low") as Season
+
+/**
+ * Customer bill saving from moving `mw` out of each evening hour (17:00–21:00)
+ * into the 10:00–15:00 window, for customers on Megaflex. Per weekday, each
+ * shifted kWh saves (that hour's rate − the standard rate it moves into).
+ */
+export function billSaving(mw: number) {
+  const perSeason = (s: Season) => {
+    const t = MEGAFLEX[s]
+    const rate = (h: number) => (MEGAFLEX.peakHours[s].includes(h) ? t.peak : t.standard)
+    // rands per weekday: kWh shifted in each hour × (c/kWh difference) ÷ 100
+    const perWeekday = PEAK_HOURS.reduce((a, h) => a + (mw * 1000 * (rate(h) - t.standard)) / 100, 0)
+    const kWhPerWeekday = mw * 1000 * PEAK_HOURS.length
+    const peakHoursHit = PEAK_HOURS.filter((h) => MEGAFLEX.peakHours[s].includes(h)).length
+    return { perWeekday, perWeek: perWeekday * 5, perKWh: kWhPerWeekday ? perWeekday / kWhPerWeekday : 0, peakHoursHit, spread: (t.peak - t.standard) / 100 }
+  }
+  const high = perSeason("high")
+  const low = perSeason("low")
+  return { high, low, perYear: high.perWeekday * MEGAFLEX.weekdays.high + low.perWeekday * MEGAFLEX.weekdays.low }
 }

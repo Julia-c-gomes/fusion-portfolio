@@ -10,6 +10,7 @@ import {
   InfoButton,
   type InfoContent,
   Legend,
+  Seg,
   smoothPath,
   T3,
   TickBar,
@@ -24,10 +25,12 @@ import {
   fmtGWh,
   fmtRand,
   fmtTime,
+  billSaving,
   loadShift,
   PEAK_HOURS,
   PEAKER_COST_R_PER_KWH,
   recommendations,
+  seasonOf,
   SOLAR_HOURS,
   type GridModel,
 } from "@/lib/eskom"
@@ -498,27 +501,40 @@ const PRIORITY_STYLE = { High: { background: "#000", color: ACC }, Medium: { bac
 
 export function OptimiseCard({ m, shiftMW, onShift, className, index }: Omit<CardProps, "onTip" | "onHide"> & { shiftMW: number; onShift: (v: number) => void }) {
   const r = loadShift(m, shiftMW)
-  const saved = useTween(r.randPerWeek, 500)
+  const bill = billSaving(shiftMW)
+  const season = seasonOf()
+  const [view, setView] = useState<"Eskom" | "Customers">("Eskom")
+  const diesel = view === "Eskom"
+  const saved = useTween(diesel ? r.randPerWeek : bill[season].perWeek, 500)
   const recs = recommendations(m)
   const [open, setOpen] = useState<string | null>(null)
   const max = 3000
   return (
     <BentoCard tone="copper" label="Optimisation" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <Head info={INFO.optimise}>Optimisation</Head>
-        <span className="fb-muted text-white/70">load-shift what-if</span>
+        <Head info={diesel ? INFO.optimise : INFO.bill} title={diesel ? "Optimisation: what Eskom saves" : "Optimisation: what customers save"}>
+          Optimisation
+        </Head>
+        <Seg label="Whose saving" options={["Eskom", "Customers"] as const} value={view} onChange={setView} />
       </div>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-x-3">
+      <p className="mt-1 truncate text-[12px] text-white/85">
+        {diesel
+          ? `What Eskom saves: less diesel at the evening peak (at ~R${PEAKER_COST_R_PER_KWH}/kWh).`
+          : `What businesses save on Eskom's Megaflex tariff (≈ ${fmtRand(bill.perYear)} a year).`}
+      </p>
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-x-3">
         <span className="fb-big text-[34px]">
           {fmtRand(saved)}
-          <span className="fb-muted ml-1 text-[13px] tracking-normal text-white/70">/ week*</span>
+          <span className="fb-muted ml-1 text-[13px] tracking-normal text-white/70">/ week</span>
         </span>
         <span className="fb-delta pb-1">
-          ↓ {fmtGWh(r.avoidedMWhPerWeek)} peakers · peak −{(r.peakCut * 100).toFixed(1)}%
+          {diesel
+            ? `↓ ${fmtGWh(r.avoidedMWhPerWeek)} peakers · peak −${(r.peakCut * 100).toFixed(1)}%`
+            : `R${bill[season].perKWh.toFixed(2)}/kWh moved · ${season === "high" ? "winter" : "Sep–May"}`}
         </span>
       </div>
       <label htmlFor="shift" className="mt-2 flex items-baseline justify-between text-[12.5px] font-medium text-white/85">
-        <span>Shift 17:00–21:00 load to 10:00–15:00</span>
+        <span>Move load from 17:00–21:00 to 10:00–15:00</span>
         <span className="fb-mono">{shiftMW.toLocaleString("en-ZA")} MW</span>
       </label>
       <input
@@ -558,68 +574,6 @@ export function OptimiseCard({ m, shiftMW, onShift, className, index }: Omit<Car
           )
         })}
       </ul>
-      <p className="mt-1 text-[10.5px] text-white/60">*Assumes R{PEAKER_COST_R_PER_KWH}/kWh for diesel/gas peaker energy.</p>
-    </BentoCard>
-  )
-}
-
-/* ───────────── Peakers per day (capsules) ───────────── */
-
-export function PeakersCard({ m, onTip, onHide, className, index }: CardProps) {
-  const [ref, { w, h }] = useSize<HTMLDivElement>()
-  const g = useGrow(m.generatedAt, 900)
-  const v = useTween(m.peakerEnergy / 1000)
-  const days = m.peakerDays
-  const vals = days.map((d) => d.peakerMWh / 1000)
-  const max = Math.max(2, Math.ceil(Math.max(...vals) / 2) * 2)
-  const pb = 18
-  const bw = Math.min(22, Math.max(12, (w - 30) / days.length - 10))
-  const gap = days.length > 1 ? (w - 24 - bw * days.length) / (days.length - 1) : 0
-  const Y = (x: number) => (h - pb) * (1 - x / max)
-  return (
-    <BentoCard tone="green" label="Diesel and gas peakers" className={className} index={index}>
-      <Head info={INFO.peakers}>Diesel peakers</Head>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="fb-big text-[34px]">{v.toFixed(1)}</span>
-        <span className="fb-mono text-[13px] text-white/70">GWh</span>
-      </div>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="fb-delta">{m.peakerHours} h running</span>
-        <span className="fb-muted text-white/70">{days.length} days</span>
-      </div>
-      <div ref={ref} className="relative mt-2 min-h-0 flex-1">
-        {w > 0 && h > 0 && (
-          <svg width={w} height={h} className="absolute inset-0 block" role="img" aria-label={`Peaker energy per day: ${days.map((d) => `${fmtDay(d.date + " 00:00")} ${(d.peakerMWh / 1000).toFixed(1)} GWh`).join(", ")}`}>
-            {[0, max / 2, max].map((t) => (
-              <text key={t} x={0} y={Math.max(10, Y(t) + 3.5)} fontSize={9.5} fill="rgba(255,255,255,.6)" fontFamily="Geist Mono">
-                {t}
-              </text>
-            ))}
-            {days.map((d, i) => {
-              const x = 24 + i * (bw + gap)
-              const last = i === days.length - 1
-              const val = vals[i] * g
-              return (
-                <g key={d.date}>
-                  <rect x={x} y={Y(max)} width={bw} height={h - pb - Y(max)} rx={bw / 2} fill="rgba(0,0,0,.28)" />
-                  <rect x={x} y={Y(val)} width={bw} height={Math.max(0, h - pb - Y(val))} rx={bw / 2} fill={last ? ACC : "#fff"} />
-                  <text x={x + bw / 2} y={h - 3} textAnchor="middle" fontSize={10} fill={last ? "#fff" : "rgba(255,255,255,.65)"} fontFamily="Geist Mono">
-                    {fmtDay(d.date + " 00:00").slice(0, 3)}
-                  </text>
-                  <rect
-                    x={x - 4}
-                    width={bw + 8}
-                    height={h}
-                    fill="transparent"
-                    onPointerMove={(e) => onTip(e.clientX, e.clientY, fmtDay(d.date + " 00:00"), [["Peaker energy", `${vals[i].toFixed(1)} GWh`, last ? ACC : "#fff"], ["Hours > 50 MW", String(d.peakerHours)]])}
-                    onPointerLeave={onHide}
-                  />
-                </g>
-              )
-            })}
-          </svg>
-        )}
-      </div>
     </BentoCard>
   )
 }
