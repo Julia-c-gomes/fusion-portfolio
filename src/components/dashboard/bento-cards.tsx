@@ -7,6 +7,8 @@ import {
   Chip,
   DotNumber,
   HAIR,
+  InfoButton,
+  type InfoContent,
   Legend,
   smoothPath,
   T3,
@@ -30,6 +32,17 @@ import {
   type GridModel,
 } from "@/lib/eskom"
 import { cn } from "@/lib/utils"
+import { INFO } from "./info"
+
+/** Card title (or caption) with its "i" explainer beside it. */
+function Head({ children, info, cap = false, onLight = false, title }: { children: string; info: InfoContent; cap?: boolean; onLight?: boolean; title?: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <div className={cap ? "fb-cap" : "fb-ttl"}>{children}</div>
+      <InfoButton title={title ?? children} info={info} onLight={onLight} />
+    </div>
+  )
+}
 
 type OnTip = (x: number, y: number, title: string, rows: TipRow[]) => void
 type CardProps = { m: GridModel; onTip: OnTip; onHide: () => void; className?: string; index?: number }
@@ -58,25 +71,20 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
   const first = pts[0] ? tot(pts[0]) : 0
   const change = first ? ((latest - first) / first) * 100 : 0
 
+  // Stacked area from a zero baseline: band heights are proportional to GW.
   const top = 30
-  const bot = 30
-  const mid = top + (h - top - bot) / 2
-  const half = (h - top - bot) / 2
+  const base = h - 30
   const tots = pts.map(tot)
   const mx = Math.max(...tots)
-  const mn = Math.min(...tots)
-  const floor = mn - (mx - mn) * 0.9
+  const ymax = Math.max(5000, Math.ceil((mx * 1.06) / 5000) * 5000)
   const X = (i: number) => -20 + (i / Math.max(1, n - 1)) * (w + 40)
-  const off = (v: number, p: (typeof pts)[number]) => {
-    const t = tot(p)
-    return t ? (((t - floor) / (mx - floor)) * half * g * v) / t : 0
-  }
+  const yOf = (v: number) => base - (v / ymax) * (base - top) * g
   const band = (sel: (p: (typeof pts)[number]) => number) => {
     if (!n || !w) return ""
-    const T = pts.map((p, i) => [X(i), mid - off(sel(p), p)] as [number, number])
-    const B = pts.map((p, i) => [X(i), mid + off(sel(p), p)] as [number, number]).reverse()
-    return smoothPath(T) + smoothPath(B, false) + "Z"
+    const T = pts.map((p, i) => [X(i), yOf(sel(p))] as [number, number])
+    return smoothPath(T) + `L${X(n - 1)},${base}L${X(0)},${base}Z`
   }
+  const gridVals = Array.from({ length: Math.floor(ymax / 10000) }, (_, k) => (k + 1) * 10000)
 
   // three annotated moments
   const peakIdx = tots.slice(0, lastActual + 1).reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0)
@@ -93,7 +101,7 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
     setHover(i)
     onTip(
       r.left + X(i),
-      r.top + mid - off(tot(p), p),
+      r.top + yOf(tot(p)),
       fmtTime(p.t),
       supply
         ? [
@@ -109,7 +117,7 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
   return (
     <BentoCard tone="blue" label={`${mode} stream`} className={className} index={index}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="fb-ttl">{supply ? "Supply" : "Demand"}</div>
+        <Head info={supply ? INFO.supply : INFO.demand}>{supply ? "Supply" : "Demand"}</Head>
         <Legend
           items={
             supply
@@ -157,6 +165,15 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
                 <rect x={splitX} width={w - splitX + 30} height={h} />
               </clipPath>
             </defs>
+            {gridVals.map((v) => (
+              <g key={v}>
+                <line x1={0} x2={w} y1={yOf(v)} y2={yOf(v)} stroke="rgba(255,255,255,.16)" strokeDasharray="2 4" />
+                <text x={24} y={yOf(v) - 5} fontSize={10} fill="rgba(255,255,255,.7)" fontFamily="Geist Mono">
+                  {v / 1000} GW
+                </text>
+              </g>
+            ))}
+            <line x1={0} x2={w} y1={base} y2={base} stroke="rgba(255,255,255,.3)" />
             <g mask={`url(#m${maskId})`}>
               {supply ? (
                 <>
@@ -175,19 +192,19 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
               const x = Math.min(w - 40, Math.max(40, X(i)))
               return (
                 <g key={i} style={{ opacity: g > 0.6 ? 1 : 0, transition: `opacity .4s ${k * 0.08}s` }}>
-                  <line x1={x} x2={x} y1={top - 4} y2={h - bot + 4} stroke="rgba(0,0,0,.55)" strokeWidth={1.5} />
+                  <line x1={x} x2={x} y1={top - 4} y2={base + 4} stroke="rgba(0,0,0,.55)" strokeWidth={1.5} />
                   <rect x={x - 36} y={top - 14} width={72} height={22} rx={11} fill="#000" />
                   <text x={x} y={top + 1} textAnchor="middle" fontSize={11} fontWeight={600} fill="#fff" fontFamily="Geist Mono">
                     {gw(tots[i])} GW
                   </text>
-                  <rect x={x - 32} y={h - bot - 8} width={64} height={22} rx={11} fill="#000" />
-                  <text x={x} y={h - bot + 7} textAnchor="middle" fontSize={10.5} fontWeight={500} fill="rgba(255,255,255,.7)" fontFamily="Geist Mono">
+                  <rect x={x - 32} y={base - 8} width={64} height={22} rx={11} fill="#000" />
+                  <text x={x} y={base + 7} textAnchor="middle" fontSize={10.5} fontWeight={500} fill="rgba(255,255,255,.7)" fontFamily="Geist Mono">
                     {shortDay(pts[i].t)}
                   </text>
                 </g>
               )
             })}
-            {hover != null && <line x1={X(hover)} x2={X(hover)} y1={top} y2={h - bot} stroke="#fff" strokeWidth={1.5} />}
+            {hover != null && <line x1={X(hover)} x2={X(hover)} y1={top} y2={base} stroke="#fff" strokeWidth={1.5} />}
             <rect
               width={w}
               height={h}
@@ -222,7 +239,7 @@ export function MixCard({ m, className, index }: Omit<CardProps, "onTip" | "onHi
   return (
     <BentoCard tone="graph" label="Energy mix" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-ttl">Energy mix</div>
+        <Head info={INFO.mix}>Energy mix</Head>
         <Chip style={{ background: "rgba(255,255,255,.12)" }}>{Math.round(m.days)} days</Chip>
       </div>
       <svg viewBox="-150 -146 300 160" className="mx-auto mt-1 block min-h-0 w-full max-w-[300px] flex-1" role="img" aria-label={`Wind and solar ${pct.toFixed(1)} percent of energy supplied`}>
@@ -277,7 +294,7 @@ export function PeakTile({ m, className, index }: Omit<CardProps, "onTip" | "onH
   return (
     <BentoCard variant="solid" label="Peak demand this week" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-cap">Peak demand · week</div>
+        <Head cap onLight info={INFO.peak} title="Peak demand this week">Peak demand · week</Head>
         {m.peak && <Chip>{fmtTime(m.peak.t).split(", ").slice(-1)[0]}</Chip>}
       </div>
       <div className="mt-auto flex items-center gap-2">
@@ -298,7 +315,7 @@ export function OutageTile({ m, className, index }: Omit<CardProps, "onTip" | "o
   return (
     <BentoCard variant="glass" label="Unplanned outages" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-cap">Unplanned outages</div>
+        <Head cap info={INFO.outages}>Unplanned outages</Head>
         <span className="fb-muted">UCLF + OCLF</span>
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-2">
@@ -327,7 +344,7 @@ export function ForecastTile({ m, className, index }: Omit<CardProps, "onTip" | 
   return (
     <BentoCard variant="glass" label="Forecast peaks" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-cap">Forecast peaks</div>
+        <Head cap info={INFO.forecast}>Forecast peaks</Head>
         <span className="fb-mono fb-muted">{m.fPeak ? `${gw(m.fPeak.forecast ?? 0)} GW max` : ""}</span>
       </div>
       <div className="mt-2">
@@ -356,7 +373,7 @@ export function RenewTile({ m, className, index }: Omit<CardProps, "onTip" | "on
   return (
     <BentoCard variant="glass" label="Renewable share" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-cap">Renewables</div>
+        <Head cap info={INFO.renew}>Renewables</Head>
         <span className="fb-muted">share of supply</span>
       </div>
       <div className="mt-3">
@@ -373,7 +390,7 @@ export function RenewTile({ m, className, index }: Omit<CardProps, "onTip" | "on
         </div>
         <div className="mt-2 flex gap-3">
           {parts.map(([k, f]) => (
-            <span key={k} className="fb-mono fb-muted text-[11px] whitespace-nowrap">
+            <span key={k} className="fb-mono text-[11.5px] whitespace-nowrap text-white/70">
               {k} {Math.round(f * 100)}%
             </span>
           ))}
@@ -407,12 +424,12 @@ export function DayCard({ m, shiftMW, onTip, onHide, className, index }: CardPro
   const line = (k: "demand" | "shifted") => smoothPath(data.map((d) => [X(d.hour), B - (B - Y(d[k])) * g] as [number, number]))
 
   return (
-    <BentoCard tone="pink" label="Typical day" className={className} index={index}>
+    <BentoCard tone="pink" label="Average day" className={className} index={index}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="fb-ttl">Typical day</div>
+          <Head info={INFO.day}>Average day</Head>
           <div className="fb-muted mt-1 text-white/70">
-            Peak <span className="fb-mono" style={{ color: ACC }}>+{fmtGW(m.peakHour.demand - m.middayTrough)}</span> above midday at {m.peakHour.label}
+            Each hour averaged over 7 days · peak <span className="fb-mono" style={{ color: ACC }}>+{fmtGW(m.peakHour.demand - m.middayTrough)}</span> above midday at {m.peakHour.label}
           </div>
         </div>
         <Legend items={[{ label: "Avg demand", color: "#fff" }, ...(shiftMW > 0 ? [{ label: "After shift", color: ACC, dashed: true }] : [])]} />
@@ -488,7 +505,7 @@ export function OptimiseCard({ m, shiftMW, onShift, className, index }: Omit<Car
   return (
     <BentoCard tone="copper" label="Optimisation" className={className} index={index}>
       <div className="flex items-center justify-between gap-2">
-        <div className="fb-ttl">Optimisation</div>
+        <Head info={INFO.optimise}>Optimisation</Head>
         <span className="fb-muted text-white/70">load-shift what-if</span>
       </div>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-x-3">
@@ -561,7 +578,7 @@ export function PeakersCard({ m, onTip, onHide, className, index }: CardProps) {
   const Y = (x: number) => (h - pb) * (1 - x / max)
   return (
     <BentoCard tone="green" label="Diesel and gas peakers" className={className} index={index}>
-      <div className="fb-ttl">Diesel peakers</div>
+      <Head info={INFO.peakers}>Diesel peakers</Head>
       <div className="mt-2 flex items-baseline gap-1">
         <span className="fb-big text-[34px]">{v.toFixed(1)}</span>
         <span className="fb-mono text-[13px] text-white/70">GWh</span>
@@ -574,7 +591,7 @@ export function PeakersCard({ m, onTip, onHide, className, index }: CardProps) {
         {w > 0 && h > 0 && (
           <svg width={w} height={h} className="absolute inset-0 block" role="img" aria-label={`Peaker energy per day: ${days.map((d) => `${fmtDay(d.date + " 00:00")} ${(d.peakerMWh / 1000).toFixed(1)} GWh`).join(", ")}`}>
             {[0, max / 2, max].map((t) => (
-              <text key={t} x={0} y={Y(t) + 3.5} fontSize={9.5} fill="rgba(255,255,255,.6)" fontFamily="Geist Mono">
+              <text key={t} x={0} y={Math.max(10, Y(t) + 3.5)} fontSize={9.5} fill="rgba(255,255,255,.6)" fontFamily="Geist Mono">
                 {t}
               </text>
             ))}

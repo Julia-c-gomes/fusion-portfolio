@@ -6,7 +6,8 @@
  * controls, glass tooltips) is rebuilt as typed React pieces so it can be fed
  * any data — in this project, Eskom grid data. Styles live in index.css (.fb-*).
  */
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 import { cn } from "@/lib/utils"
 
@@ -305,5 +306,104 @@ export function Tip({ tip }: { tip: TipState }) {
         </>
       )}
     </div>
+  )
+}
+
+/* ─────────────────────── info panel ─────────────────────── */
+
+export type InfoContent = { source: string; how: string; why: string }
+
+/**
+ * Small "i" button that opens a glass panel explaining a card: data source,
+ * method, and why it matters. Rendered in a portal so tight cards never clip it;
+ * closes on Escape, outside click, scroll or resize.
+ */
+export function InfoButton({ title, info, onLight = false }: { title: string; info: InfoContent; onLight?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const btn = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<CSSProperties>({})
+  const id = useId()
+
+  useLayoutEffect(() => {
+    if (!open || !btn.current || !panel.current) return
+    const b = btn.current.getBoundingClientRect()
+    const p = panel.current.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let left = b.right - p.width
+    if (left < 12) left = 12
+    if (left + p.width > vw - 12) left = vw - 12 - p.width
+    let top = b.bottom + 8
+    if (top + p.height > vh - 12) top = Math.max(12, b.top - p.height - 8)
+    setPos({ left, top })
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+        btn.current?.focus()
+      }
+    }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (!panel.current?.contains(t) && !btn.current?.contains(t)) close()
+    }
+    window.addEventListener("keydown", onKey)
+    window.addEventListener("mousedown", onDown)
+    window.addEventListener("resize", close)
+    window.addEventListener("scroll", close, true)
+    panel.current?.focus()
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("mousedown", onDown)
+      window.removeEventListener("resize", close)
+      window.removeEventListener("scroll", close, true)
+    }
+  }, [open])
+
+  return (
+    <>
+      <button
+        ref={btn}
+        type="button"
+        aria-label={`How "${title}" is calculated`}
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen((o) => !o)}
+        className={cn("fb-info", onLight && "fb-info-light")}
+      >
+        i
+      </button>
+      {open &&
+        createPortal(
+          <div ref={panel} id={id} role="dialog" aria-label={`About ${title}`} tabIndex={-1} className="fb-pop" style={pos}>
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <p className="text-[14px] font-semibold text-white">{title}</p>
+              <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="fb-pop-x">
+                ✕
+              </button>
+            </div>
+            <dl className="space-y-2.5">
+              <div>
+                <dt>Source</dt>
+                <dd>{info.source}</dd>
+              </div>
+              <div>
+                <dt>How it's calculated</dt>
+                <dd>{info.how}</dd>
+              </div>
+              <div>
+                <dt>Why it matters</dt>
+                <dd>{info.why}</dd>
+              </div>
+            </dl>
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }
