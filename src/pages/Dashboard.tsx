@@ -79,6 +79,10 @@ export default function Dashboard() {
               {m?.supplyRange ? `Eskom data to ${fmtTime(m.supplyRange.to)}` : "Loading Eskom data…"}
             </span>
           </h1>
+          <p className="order-last basis-full text-[12px] leading-snug text-white/45">
+            Eskom publishes hourly figures about once a day, usually running 1–2 days behind. This page checks for new data every 6 hours
+            {m ? `; it last changed ${new Date(m.generatedAt).toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : "."}
+          </p>
           <Seg label="Stream view" options={["Supply", "Demand"] as const} value={mode} onChange={setMode} />
           {m && (
             <a href={m.portal} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1.5 text-[12.5px] font-medium text-white/60 hover:text-white">
@@ -89,19 +93,19 @@ export default function Dashboard() {
 
         {m ? (
           <div className="fb-grid">
-            <StreamCard m={m} mode={mode} onTip={onTip} onHide={onHide} className="fb-s8" index={0} />
-            <MixCard m={m} className="fb-s4 fb-half" index={1} />
-            <PeakTile m={m} className="fb-kpi" index={2} />
-            <OutageTile m={m} className="fb-kpi" index={3} />
-            <ForecastTile m={m} className="fb-kpi" index={4} />
-            <RenewTile m={m} className="fb-kpi" index={5} />
+            <PeakTile m={m} className="fb-kpi" index={0} />
+            <OutageTile m={m} className="fb-kpi" index={1} />
+            <ForecastTile m={m} className="fb-kpi" index={2} />
+            <RenewTile m={m} className="fb-kpi" index={3} />
+            <StreamCard m={m} mode={mode} onTip={onTip} onHide={onHide} className="fb-s8" index={4} />
+            <MixCard m={m} className="fb-s4 fb-half" index={5} />
             <DayCard m={m} shiftMW={shiftMW} onTip={onTip} onHide={onHide} className="fb-s5" index={6} />
             <OptimiseCard m={m} shiftMW={shiftMW} onShift={setShiftMW} className="fb-s4 fb-half" index={7} />
             <PeakersCard m={m} onTip={onTip} onHide={onHide} className="fb-s3 fb-half" index={8} />
           </div>
         ) : (
           <div className="fb-grid" aria-hidden>
-            {["fb-s8", "fb-s4", "fb-kpi", "fb-kpi", "fb-kpi", "fb-kpi", "fb-s5", "fb-s4", "fb-s3"].map((c, i) => (
+            {["fb-kpi", "fb-kpi", "fb-kpi", "fb-kpi", "fb-s8", "fb-s4", "fb-s5", "fb-s4", "fb-s3"].map((c, i) => (
               <div key={i} className={cn(c, "animate-pulse rounded-[28px] bg-white/[0.06]")} />
             ))}
           </div>

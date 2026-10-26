@@ -142,6 +142,12 @@ if (!fresh && previous.generatedAt) {
   console.warn("Nothing new fetched; leaving eskom.json unchanged.")
   process.exit(0)
 }
+// Only rewrite (and so commit) when Eskom's numbers actually changed;
+// generatedAt then means "data last changed", not "last checked".
+if (previous.generatedAt && JSON.stringify(previous.datasets) === JSON.stringify(datasets)) {
+  console.log("Eskom data unchanged since", previous.generatedAt)
+  process.exit(0)
+}
 
 await mkdir(dirname(OUT), { recursive: true })
 await writeFile(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), portal: "https://www.eskom.co.za/dataportal/", datasets }))

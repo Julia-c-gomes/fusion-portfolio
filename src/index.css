@@ -262,7 +262,7 @@
 }
 @media (min-width: 1200px) and (min-height: 700px) {
   .fb-fit { height: 100dvh; overflow: hidden; }
-  .fb-grid { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1.08fr) minmax(0, 0.56fr) minmax(0, 1.04fr); }
+  .fb-grid { flex: 1; min-height: 0; grid-template-rows: minmax(0, 0.56fr) minmax(0, 1.08fr) minmax(0, 1.04fr); }
   .fb-grid > *, .fb-grid > .fb-kpi { height: auto; }
   .fb-grid > .fb-s8 { grid-column: span 8; }
   .fb-grid > .fb-s5 { grid-column: span 5; }

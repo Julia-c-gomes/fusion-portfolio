@@ -165,7 +165,7 @@ export function buildModel(file: EskomFile) {
     const cur = fByDay.get(date)
     if (!cur || v(r.forecast) > v(cur.forecast)) fByDay.set(date, r)
   })
-  const forecastPeaks = [...fByDay.values()].slice(0, 3)
+  const forecastPeaks = [...fByDay.values()].sort((a, b) => (a.t < b.t ? -1 : 1)).slice(0, 3)
   const reSplit = {
     wind: supply.reduce((a, r) => a + pos(r.wind), 0),
     solar: supply.reduce((a, r) => a + pos(r.pv) + pos(r.csp), 0),

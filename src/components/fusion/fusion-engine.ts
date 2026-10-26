@@ -1,4 +1,4 @@
-import { AetherField } from "./aether-field"
+import { MoleculeField } from "./molecule-field"
 
 /**
  * Scroll-driven controlled-fusion scene on a single 2D canvas.
@@ -146,7 +146,7 @@ export class FusionEngine {
   private spin = 0
   private orbs: Partial<Record<keyof typeof PALETTES, Orb>> = {}
   private bg: HTMLCanvasElement | null = null
-  private field: AetherField | null = null
+  private field: MoleculeField | null = null
   private mouse = { x: 0, y: 0, active: false }
   private lowPower: boolean
   private visible = true
@@ -243,7 +243,7 @@ export class FusionEngine {
     this.el.style.height = `${h}px`
     this.bg = this.makeBackground()
     if (this.field) this.field.resize(w, h)
-    else this.field = new AetherField(w, h, this.lowPower, this.reducedMotion)
+    else this.field = new MoleculeField(w, h, this.lowPower, this.reducedMotion)
   }
 
   private makeBackground() {
@@ -263,13 +263,30 @@ export class FusionEngine {
     }
     neb(this.w * 0.15, this.h * 0.1, Math.max(this.w, this.h) * 0.6, "rgba(90,50,170,0.22)")
     neb(this.w * 0.9, this.h * 0.95, Math.max(this.w, this.h) * 0.55, "rgba(160,50,90,0.14)")
-    const rand = rng(99)
-    const stars = Math.round((this.w * this.h) / 2600)
-    for (let i = 0; i < stars; i++) {
-      const s = rand() < 0.08 ? 1.4 : 0.7
-      g.fillStyle = `rgba(230,225,255,${(0.15 + rand() * 0.55).toFixed(2)})`
-      g.fillRect(rand() * this.w, rand() * this.h, s, s)
+    // faint hexagonal (graphene-like) lattice, fading toward the edges
+    const a = this.w < 768 ? 22 : 30 // C–C spacing in px
+    const hx = Math.sqrt(3) * a
+    g.strokeStyle = "rgba(190,175,255,0.055)"
+    g.lineWidth = 1
+    g.beginPath()
+    for (let row = -1; row * 1.5 * a < this.h + a; row++) {
+      for (let col = -1; col * hx < this.w + hx; col++) {
+        const cx = col * hx + (row % 2 ? hx / 2 : 0)
+        const cy = row * 1.5 * a
+        for (let k = 0; k < 3; k++) {
+          const t0 = ((60 * k - 30) * Math.PI) / 180
+          const t1 = ((60 * k + 30) * Math.PI) / 180
+          g.moveTo(cx + a * Math.cos(t0), cy + a * Math.sin(t0))
+          g.lineTo(cx + a * Math.cos(t1), cy + a * Math.sin(t1))
+        }
+      }
     }
+    g.stroke()
+    const vg = g.createRadialGradient(this.w / 2, this.h / 2, Math.min(this.w, this.h) * 0.25, this.w / 2, this.h / 2, Math.max(this.w, this.h) * 0.75)
+    vg.addColorStop(0, "rgba(5,4,11,0)")
+    vg.addColorStop(1, "rgba(5,4,11,0.85)")
+    g.fillStyle = vg
+    g.fillRect(0, 0, this.w, this.h)
     return c
   }
 
@@ -318,43 +335,64 @@ export class FusionEngine {
       if (front) ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI)
       else ctx.ellipse(0, 0, rx, ry, 0, Math.PI, TAU)
       ctx.stroke()
-      // charged particles riding the field line
-      for (let k = 0; k < 3; k++) {
-        const th = (this.time * (0.5 + i * 0.13) + (k * TAU) / 3 + i) % TAU
-        const isFront = th < Math.PI
-        if (isFront !== front) continue
+      // quasi-neutral plasma: on each field line one D/T ion (warm) and one
+      // electron (cyan) circulate in opposite directions, as in the plasma current
+      const w = this.time * (0.5 + i * 0.13)
+      const particles: [number, number, string, string][] = [
+        [(((w + i) % TAU) + TAU) % TAU, 7, "255,230,200", "255,150,90"],
+        [(((-w * 1.6 + i + Math.PI) % TAU) + TAU) % TAU, 4.5, "220,248,255", "124,210,255"],
+      ]
+      for (const [th, size, c0, c1] of particles) {
+        if (th < Math.PI !== front) continue
         const px = Math.cos(th) * rx
         const py = Math.sin(th) * ry
-        const gr = ctx.createRadialGradient(px, py, 0, px, py, 7)
-        gr.addColorStop(0, `rgba(255,230,200,${(a * 0.9).toFixed(3)})`)
-        gr.addColorStop(1, "rgba(255,150,90,0)")
+        const gr = ctx.createRadialGradient(px, py, 0, px, py, size)
+        gr.addColorStop(0, `rgba(${c0},${(a * 0.95).toFixed(3)})`)
+        gr.addColorStop(1, `rgba(${c1},0)`)
         ctx.fillStyle = gr
-        ctx.fillRect(px - 7, py - 7, 14, 14)
+        ctx.fillRect(px - size, py - size, size * 2, size * 2)
       }
     }
     ctx.restore()
     ctx.globalCompositeOperation = "source-over"
   }
 
-  /** Thin orbital arcs around the hero nucleus (decorative, like a reactor schematic). */
-  private drawArcs(L: FusionLayout, r: number, a: number) {
-    if (a <= 0.01) return
+  /**
+   * A hydrogen-isotope atom has exactly one electron: one orbit, one dot.
+   * `ionise` (0→1) breaks the orbit apart as the plasma strips the electron
+   * away. Back half is drawn before the nucleus, front half after, for depth.
+   */
+  private drawElectron(x: number, y: number, nr: number, alpha: number, phase: number, ionise: number, front: boolean) {
+    const a = alpha * (1 - ionise)
+    if (a <= 0.01 || nr < 1) return
     const ctx = this.ctx
+    const rx = nr * (1.34 + ionise * 2.2)
+    const ry = rx * 0.36
+    const th = (((this.time * 1.25 + phase) % TAU) + TAU) % TAU
     ctx.save()
-    ctx.translate(L.ax, L.ay)
-    ctx.strokeStyle = `rgba(235,228,255,${(0.28 * a).toFixed(3)})`
-    ctx.lineWidth = 1
-    const t = this.time * 0.05
+    ctx.translate(x, y)
+    ctx.rotate(-0.38)
+    ctx.strokeStyle = `rgba(200,236,255,${(0.34 * a).toFixed(3)})`
+    ctx.lineWidth = 1.2
+    ctx.setLineDash(ionise > 0.02 ? [3, 7] : [])
     ctx.beginPath()
-    ctx.ellipse(0, 0, r * 1.32, r * 1.32, 0, -0.4 + t, 1.9 + t)
+    if (front) ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI)
+    else ctx.ellipse(0, 0, rx, ry, 0, Math.PI, TAU)
     ctx.stroke()
-    ctx.beginPath()
-    ctx.ellipse(0, 0, r * 1.62, r * 0.5, -0.5, 2.6 - t, 5.6 - t)
-    ctx.stroke()
-    ctx.strokeStyle = `rgba(169,124,255,${(0.35 * a).toFixed(3)})`
-    ctx.beginPath()
-    ctx.ellipse(0, 0, r * 1.9, r * 1.9, 0, 3.6 + t * 0.6, 4.4 + t * 0.6)
-    ctx.stroke()
+    ctx.setLineDash([])
+    if (th < Math.PI === front) {
+      const px = Math.cos(th) * rx
+      const py = Math.sin(th) * ry
+      const size = Math.min(6, Math.max(3.5, nr * 0.025))
+      ctx.globalCompositeOperation = "lighter"
+      const gr = ctx.createRadialGradient(px, py, 0, px, py, size * 2.2)
+      gr.addColorStop(0, `rgba(235,250,255,${a.toFixed(3)})`)
+      gr.addColorStop(0.35, `rgba(124,210,255,${(a * 0.8).toFixed(3)})`)
+      gr.addColorStop(1, "rgba(124,210,255,0)")
+      ctx.fillStyle = gr
+      ctx.fillRect(px - size * 2.2, py - size * 2.2, size * 4.4, size * 4.4)
+      ctx.globalCompositeOperation = "source-over"
+    }
     ctx.restore()
   }
 
@@ -416,8 +454,6 @@ export class FusionEngine {
     ctx.fillRect(0, 0, this.w, this.h)
     ctx.globalCompositeOperation = "source-over"
 
-    this.drawArcs(L, dR, 1 - s(0.2, 1))
-    this.drawArcs(L, heR * pulse, s(6.2, 7) * 0.8)
     this.drawRings(L, rings, false, heat)
 
     // ── nuclei ────────────────────────────────────────────────────
@@ -430,11 +466,17 @@ export class FusionEngine {
     const ty = L.ay + (sep / 2) * sa
     tx += (1 - tEnter) * (this.w - L.ax + tR * 3) // slides in from the right
     const rotD = this.time * 0.06
+    // electrons: bound until the plasma heats past ionisation (stage 2→3)
+    const ionise = s(2.15, 2.85)
+    this.drawElectron(dx, dy, dR, dtAlpha, 0, ionise, false)
+    if (tEnter > 0.001) this.drawElectron(tx, ty, tR, dtAlpha * tEnter, 2.1, ionise, false)
     // draw the one further "back" first
     const dFirst = sa <= 0
     const drawD = () => this.drawOrb("deuterium", dx, dy, dR, dtAlpha, rotD, 1 + heat * 0.4)
     const drawT = () => tEnter > 0.001 && this.drawOrb("tritium", tx, ty, tR, dtAlpha, -rotD * 1.3, 1 + heat * 0.4)
     if (dFirst) { drawD(); drawT() } else { drawT(); drawD() }
+    this.drawElectron(dx, dy, dR, dtAlpha, 0, ionise, true)
+    if (tEnter > 0.001) this.drawElectron(tx, ty, tR, dtAlpha * tEnter, 2.1, ionise, true)
 
     this.drawOrb("helium", L.ax, L.ay, heR * pulse, heA, this.time * 0.05, 1.15 + 0.35 * s(6, 7))
 

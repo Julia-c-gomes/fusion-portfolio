@@ -11,7 +11,7 @@ function RouteEffects() {
   const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = pathname.startsWith("/grid") ? "Grid dashboard · Julia Gomes" : "Julia Gomes · Chemical Engineer, Cape Town"
+    document.title = pathname.startsWith("/grid") ? "Grid dashboard · Julia Gomes" : "Julia Gomes · Portfolio"
     document.getElementById("main")?.focus({ preventScroll: true })
   }, [pathname])
   return null

@@ -333,7 +333,7 @@ export function ForecastTile({ m, className, index }: Omit<CardProps, "onTip" | 
       <div className="mt-2">
         {m.forecastPeaks.length === 0 && <p className="fb-muted mt-3">Eskom hasn't published a forecast.</p>}
         {m.forecastPeaks.map((r, i) => (
-          <div key={r.t} className="flex h-[34px] items-center gap-3" style={i ? { borderTop: "1px solid rgba(255,255,255,.08)" } : undefined}>
+          <div key={r.t} className="flex h-[30px] items-center gap-3" style={i ? { borderTop: "1px solid rgba(255,255,255,.08)" } : undefined}>
             <i className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-semibold not-italic">{fmtDay(r.t).slice(0, 1)}</i>
             <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{fmtDay(r.t)}</span>
             <span className="fb-mono fb-muted text-[11.5px]">{r.t.slice(11, 16)}</span>

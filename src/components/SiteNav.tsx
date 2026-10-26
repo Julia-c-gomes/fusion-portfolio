@@ -15,13 +15,18 @@ export function SiteNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-4 pt-[max(14px,env(safe-area-inset-top))] sm:px-6">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
-        <NavLink to="/" className="group flex min-h-11 items-center gap-3 rounded-full pr-2" aria-label={`${profile.name}, home`}>
-          <span className="glass flex size-10 items-center justify-center rounded-full font-mono text-[13px] font-medium text-flare">
-            {profile.initials}
-          </span>
-          <span className="hidden leading-tight sm:block">
-            <span className="block text-[14px] font-semibold text-ink">{profile.name}</span>
-            <span className="block text-[11.5px] text-haze">{profile.role}</span>
+        <NavLink to="/" className="group flex min-h-11 items-center gap-3 rounded-full pr-2" aria-label={`${profile.name} portfolio, home`}>
+          <img
+            src="./avatar.webp"
+            alt=""
+            width={44}
+            height={44}
+            className="size-10 shrink-0 rounded-full sm:size-11 object-cover ring-2 ring-white/20 transition-shadow duration-300 group-hover:ring-flare/70"
+          />
+          <span className="flex items-baseline gap-2.5">
+            <span className="text-[17px] font-semibold tracking-[-0.02em] whitespace-nowrap text-ink sm:text-[22px]">{profile.name}</span>
+            <span aria-hidden className="hidden h-4 w-px self-center bg-white/25 sm:block" />
+            <span className="hidden font-mono text-[11px] tracking-[0.2em] text-haze uppercase sm:inline">Portfolio</span>
           </span>
         </NavLink>
 
@@ -46,7 +51,7 @@ export function SiteNav() {
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
-                <Icon className="relative size-4" aria-hidden />
+                <Icon className="relative hidden size-4 sm:block" aria-hidden />
                 <span className="relative">
                   {t.short ? (
                     <>

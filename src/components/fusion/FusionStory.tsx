@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ArrowPillButton } from "@/components/ui/arrow-pill-button"
 import { BadgePill } from "@/components/ui/badge-pill"
 import { GridLines } from "@/components/ui/grid-lines"
-import { profile, stages } from "@/content/portfolio"
+import { profile, stages, type ReactionPart } from "@/content/portfolio"
 import { FusionEngine } from "./fusion-engine"
 import { GlassCard } from "./GlassCard"
 import { ProgressRail } from "./ProgressRail"
@@ -43,6 +43,38 @@ function useSegment() {
     return () => window.removeEventListener("resize", onResize)
   }, [])
   return seg
+}
+
+/** Nuclei as dots: filled coral = proton, hollow = neutron. Counts are exact. */
+function NucleonReadout({ parts }: { parts: ReactionPart[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 normal-case">
+      {parts.map((p, i) =>
+        typeof p === "string" ? (
+          <span key={i} className="text-[13px] text-haze">
+            {p}
+          </span>
+        ) : (
+          <span key={i} className="inline-flex items-center gap-1.5">
+            <span className="text-[12px] tracking-normal text-ink">{p.sym}</span>
+            <span className="inline-flex gap-[3px]">
+              {Array.from({ length: p.p }, (_, k) => (
+                <i key={"p" + k} className="size-[9px] rounded-full bg-plasma shadow-[0_0_6px_rgba(255,107,74,0.7)]" />
+              ))}
+              {Array.from({ length: p.n }, (_, k) => (
+                <i key={"n" + k} className="size-[9px] rounded-full border-[1.5px] border-ink/70" />
+              ))}
+            </span>
+          </span>
+        ),
+      )}
+      <span className="ml-1 hidden items-center gap-2 text-[10px] tracking-[0.08em] text-haze/80 sm:inline-flex">
+        <i className="size-[7px] rounded-full bg-plasma" /> proton
+        <i className="size-[7px] rounded-full border border-ink/70" /> neutron
+        <i className="size-[6px] rounded-full bg-ion" /> electron
+      </span>
+    </div>
+  )
 }
 
 export function FusionStory() {
@@ -115,7 +147,8 @@ export function FusionStory() {
         >
           <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible">
             <BadgePill icon={<Atom className="size-4 text-aether" aria-hidden />}>
-              {profile.role} · {profile.location.split(",")[0]}
+              {profile.role}
+              <span className="hidden sm:inline"> · {profile.location.split(",")[0]}</span>
             </BadgePill>
           </motion.div>
           <motion.h1
@@ -134,7 +167,7 @@ export function FusionStory() {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="mt-5 max-w-md text-[16px] leading-relaxed text-haze sm:text-lg"
+            className="mt-5 hidden max-w-md text-[16px] leading-relaxed text-haze sm:block sm:text-lg"
           >
             {profile.intro}
           </motion.p>
@@ -202,12 +235,15 @@ export function FusionStory() {
       {/* HUD: stage counter + physics caption, like a reactor readout */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex items-end justify-between px-5 pb-[max(20px,env(safe-area-inset-bottom))] font-mono text-[11px] tracking-[0.12em] text-haze uppercase sm:px-10 sm:pb-8">
         <div className={heroVisible ? "opacity-0 transition-opacity lg:opacity-100" : "transition-opacity"}>
-          <span className="text-ink">
-            <span ref={counterRef}>01</span>/{String(N).padStart(2, "0")}
-          </span>{" "}
-          // <span className="text-ember">{current.physics}</span>
+          <NucleonReadout parts={current.reaction} />
+          <div className="mt-2 max-w-[calc(100vw-80px)] leading-relaxed">
+            <span className="text-ink">
+              <span ref={counterRef}>01</span>/{String(N).padStart(2, "0")}
+            </span>{" "}
+            // <span className="text-ember">{current.physics}</span>
+          </div>
         </div>
-        <div className="hidden sm:block">Cape Town · 33.92°S 18.42°E</div>
+        <div className="hidden sm:block">Cape Town CBD · 33.9253°S 18.4239°E</div>
       </div>
 
       <ProgressRail ref={fillRef} stages={stages} active={view.stage} onSelect={goTo} />

@@ -9,8 +9,7 @@
 
 export const profile = {
   name: "Julia Gomes",
-  initials: "JG",
-  role: "Chemical Engineer",
+  role: "Graduate Chemical Engineer",
   location: "Cape Town, South Africa",
   headline: "Engineering energy,",
   headlineAccent: "one reaction at a time.",
@@ -38,12 +37,23 @@ export type StageCard = {
   links?: CardLink[]
 }
 
+/** A nucleus drawn as dots in the bottom-left readout: p = protons, n = neutrons. */
+export type Nucleus = { sym: string; p: number; n: number }
+export type ReactionPart = Nucleus | "+" | "→"
+
+const D: Nucleus = { sym: "²H", p: 1, n: 1 }
+const T: Nucleus = { sym: "³H", p: 1, n: 2 }
+const He: Nucleus = { sym: "⁴He", p: 2, n: 2 }
+const NEUTRON: Nucleus = { sym: "n", p: 0, n: 1 }
+
 export type Stage = {
   id: string
   /** Short label for the progress rail */
   label: string
   /** The physics shown in this step, displayed bottom-left */
   physics: string
+  /** Nuclei on screen at this step, shown as proton/neutron dots */
+  reaction: ReactionPart[]
   card?: StageCard
 }
 
@@ -51,12 +61,14 @@ export const stages: Stage[] = [
   {
     id: "ignition",
     label: "Ignition",
-    physics: "²H · deuterium · 1p + 1n",
+    physics: "Deuterium atom · 1 proton, 1 neutron, 1 electron",
+    reaction: [D],
   },
   {
     id: "about",
     label: "About",
-    physics: "Fuel · deuterium, extracted from seawater",
+    physics: "Fuel · about 1 in 6,400 hydrogen atoms in seawater is deuterium",
+    reaction: [D],
     card: {
       eyebrow: "01 · Background",
       title: "Process, optimisation & data",
@@ -72,7 +84,8 @@ export const stages: Stage[] = [
   {
     id: "education",
     label: "Education",
-    physics: "³H · tritium joins · 1p + 2n",
+    physics: "Tritium joins · 1 proton, 2 neutrons, 1 electron",
+    reaction: [D, "+", T],
     card: {
       eyebrow: "02 · Education",
       title: "BSc Chemical Engineering, UCT",
@@ -87,7 +100,8 @@ export const stages: Stage[] = [
   {
     id: "skills",
     label: "Skills",
-    physics: "Plasma · 150 million °C",
+    physics: "Plasma · ~150 million °C strips the electrons off",
+    reaction: [D, "+", T],
     card: {
       eyebrow: "03 · Toolkit",
       title: "Lab bench to code",
@@ -102,7 +116,8 @@ export const stages: Stage[] = [
   {
     id: "project-1",
     label: "Project I",
-    physics: "Magnetic confinement · tokamak field",
+    physics: "Magnetic confinement · field lines hold the ions and electrons",
+    reaction: [D, "+", T],
     card: {
       eyebrow: "04 · Project",
       title: "Green hydrogen plant design",
@@ -118,7 +133,8 @@ export const stages: Stage[] = [
   {
     id: "project-2",
     label: "Project II",
-    physics: "Fusion · D + T → ⁴He + n",
+    physics: "Fusion · the nuclei merge",
+    reaction: [D, "+", T, "→", He, "+", NEUTRON],
     card: {
       eyebrow: "05 · Project",
       title: "Carbon capture solvent study",
@@ -130,7 +146,8 @@ export const stages: Stage[] = [
   {
     id: "project-3",
     label: "Project III",
-    physics: "Energy release · 17.6 MeV per reaction",
+    physics: "17.6 MeV released · ⁴He carries 3.5, the neutron 14.1",
+    reaction: [He, "+", NEUTRON],
     card: {
       eyebrow: "06 · Project",
       title: "Grid demand analytics",
@@ -142,7 +159,8 @@ export const stages: Stage[] = [
   {
     id: "contact",
     label: "Contact",
-    physics: "Sustained burn · Q > 1",
+    physics: "Burning plasma · ⁴He (alpha) heating keeps it going",
+    reaction: [He],
     card: {
       eyebrow: "07 · Contact",
       title: "Let's start a reaction",
