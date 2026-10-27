@@ -40,3 +40,12 @@ The one assumption in the maths is `PEAKER_COST_R_PER_KWH` (default R6/kWh) in `
 - Every card stays in the DOM for screen readers. Tabbing into a hidden card scrolls to it.
 - Nucleus textures are pre-rendered once. Particle links use a spatial grid. Pixel ratio and particle count are capped on phones. The animation pauses when the tab is hidden.
 - The dashboard and the charting library load only when the Grid tab is opened.
+
+## Security
+
+- **No secrets anywhere.** The site is static: no API keys, tokens, `.env` files or backend. The Eskom data is public and fetched without credentials. The only credential is GitHub's automatic, short-lived `GITHUB_TOKEN`, which exists only inside Actions and never reaches the site.
+- **Least-privilege deploy.** `.github/workflows/deploy.yml` has three jobs: `refresh-data` (can write to the repo, but installs no npm packages), `build` (read-only; runs `npm ci`), `deploy` (Pages only).
+- **Content Security Policy** is added to production builds (`vite.config.ts`): scripts only from this site, fonts only from Google Fonts, no forms, no plugins.
+- **No source maps** are published (`build.sourcemap: false`).
+- **Images** are stripped of EXIF/GPS metadata. Never commit originals, CVs or anything with private contact details: the repo and its history are public.
+- Check before publishing: `npm audit` and a search of `dist/` for anything that shouldn't be there.

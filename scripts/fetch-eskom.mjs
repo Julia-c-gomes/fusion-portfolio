@@ -76,7 +76,8 @@ const DATASETS = {
 }
 
 async function get(url, accept) {
-  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: accept } })
+  // 30 s timeout so a hung Eskom server can't stall the Action
+  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: accept }, signal: AbortSignal.timeout(30_000) })
   if (!res.ok) throw new Error(`${res.status} ${url}`)
   return res
 }
