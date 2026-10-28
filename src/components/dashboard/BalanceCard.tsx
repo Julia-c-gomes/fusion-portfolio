@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
 import { BentoCard, Chip, InfoButton } from "@/components/ui/finance-bento"
-import { CONSUMPTION, defaults, evaluate, landUsed, MACKAY_UK, PRODUCTION, SA, type Line, type Values } from "@/lib/balance"
+import { CONSUMPTION, defaults, electrified, evaluate, landUsed, MACKAY_UK, PRODUCTION, SA, type Line, type Values } from "@/lib/balance"
 import { INFO } from "./info"
 
 const USE = "#B9A6FF" // MacKay drew consumption red; this is the Supply card purple…
@@ -68,7 +68,7 @@ export function BalanceCard({ eskomPerPerson, className, index }: { eskomPerPers
         kWh per person per day · not Eskom data
       </p>
       <div className="mt-2 flex min-h-0 flex-1 flex-col justify-center gap-3.5">
-        <Stack rows={useRows} total={useT} max={max} color={USE} label="Average energy consumption" />
+        <Stack rows={useRows} total={useT} max={max} color={USE} label="Car owner's energy use" />
         <Stack rows={makeRows} total={makeT} max={max} color={MAKE} label="Optimistic energy generation" />
       </div>
       {open && (
@@ -177,6 +177,11 @@ function BalanceSheet(props: {
   // kWh/person/day ÷ 24 h = kW per person; × population = national average power
   const makeGW = ((props.makeT / 24) * SA.population) / 1e6
   const gridGW = ((props.eskom / 24) * SA.population) / 1e6
+  // same lifestyle with every car-km electric, so both sides count delivered electricity for driving
+  const elec = evaluate(CONSUMPTION, electrified(props.use))
+  const elecT = elec.reduce((a, r) => a + r.kwh, 0)
+  const carNow = evaluate(CONSUMPTION, props.use).find((r) => r.id === "car")?.kwh ?? 0
+  const carEv = elec.find((r) => r.id === "car")?.kwh ?? 0
   return createPortal(
     <div className="fb fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
@@ -218,7 +223,7 @@ function BalanceSheet(props: {
 
         <div className="mt-4 grid grid-cols-3 gap-3 rounded-2xl bg-white/[0.045] p-4 text-center" aria-live="polite">
           <div>
-            <div className="fb-cap">Average consumption</div>
+            <div className="fb-cap">Car owner's use</div>
             <div className="fb-big mt-1 text-[34px]" style={{ color: USE }}>
               {fmt(props.useT)}
             </div>
@@ -238,7 +243,12 @@ function BalanceSheet(props: {
         <div className="mt-2 space-y-1.5 text-[12px] leading-snug text-white/60">
           <p>
             <span className="text-white/85">Compare MacKay's Britain:</span> {MACKAY_UK.use} used vs {MACKAY_UK.make} possible, so red beat green. South
-            Africa has about five times Britain's land per person and twice the sunshine, so its renewable potential per person is far larger.
+            Africa has about five times Britain's land per person and twice the sunshine, so here it's {fmt(props.useT)} used vs {fmt(props.makeT)} possible.
+          </p>
+          <p>
+            <span className="text-white/85">Like for like:</span> the car line counts petrol, but generation is electricity, and an engine wastes about
+            three quarters of its fuel as heat. Driving every kilometre electric takes the car from {fmt(carNow)} to {fmt(carEv)} kWh/d and total use to{" "}
+            {fmt(elecT)} kWh/d, which renewables would cover {(props.makeT / elecT).toFixed(1)}×. Try it with “share driven electric” on the car line.
           </p>
           <p>
             <span className="text-white/85">What “optimistic generation” takes:</span> building on {land.toFixed(1)}% of South Africa (≈{" "}
@@ -253,7 +263,7 @@ function BalanceSheet(props: {
         </div>
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
-          <Column title="Average consumption" color={USE} lines={CONSUMPTION} vals={props.use} setVals={props.setUse} total={props.useT} />
+          <Column title="Car owner's consumption" color={USE} lines={CONSUMPTION} vals={props.use} setVals={props.setUse} total={props.useT} />
           <Column title="Optimistic generation (renewables)" color="#E8FF1F" lines={PRODUCTION} vals={props.make} setVals={props.setMake} total={props.makeT} />
         </div>
       </div>

@@ -60,6 +60,6 @@ export const INFO = {
   balance: {
     source: "Assumptions only, after David MacKay, “Sustainable Energy – without the hot air” (2008). South African inputs: Stats SA population (63.1 m), land area, DWS river runoff (≈49 km³/yr), Stellenbosch wave data (≈25–40 kW/m), average sunshine ≈5.5 kWh/m²/day. The grid marker is the only Eskom figure.",
     how: "All of MacKay's categories, each a simple formula, e.g. car = km per day ÷ km per litre × kWh per litre. Renewables = the share of land, sea or coast you'd build on × a typical power per m² (wind ≈2 W/m², solar farms ≈12 W/m²) ÷ population. Open the balance sheet to see and change every assumption.",
-    why: "It turns national energy into a personal scale you can reason about: how much a lifestyle uses, and whether South Africa's sun, wind and water could cover it. “Optimistic generation” assumes we build on the stated areas; it isn't today's output. “Average consumption” is for a typical car owner.",
+    why: "It turns national energy into a personal scale you can reason about: how much a lifestyle uses, and whether South Africa's sun, wind and water could cover it. “Optimistic generation” assumes we build on the stated areas; it isn't today's output. Consumption is for a typical car owner, which most South Africans are not, and counts petrol rather than the far smaller electricity an electric car would need.",
   },
 } satisfies Record<string, CardInfo>

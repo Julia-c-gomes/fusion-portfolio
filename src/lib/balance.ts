@@ -50,10 +50,12 @@ export const CONSUMPTION: Line[] = [
       { key: "km", label: "distance", unit: "km/day", value: 50 },
       { key: "kmPerL", label: "economy", unit: "km/L", value: 12 },
       { key: "kWhPerL", label: "petrol energy", unit: "kWh/L", value: 9.5, step: 0.1 },
+      { key: "ev", label: "share driven electric", unit: "%", value: 0, step: 10 },
+      { key: "evKWhPerKm", label: "EV energy", unit: "kWh/km", value: 0.18, step: 0.01 },
     ],
-    calc: (p) => (p.km / p.kmPerL) * p.kWhPerL,
-    formula: "distance per day ÷ distance per litre × energy per litre",
-    note: "MacKay's own method. Petrol holds about 9.5 kWh per litre.",
+    calc: (p) => p.km * ((1 - p.ev / 100) * (p.kWhPerL / p.kmPerL) + (p.ev / 100) * p.evKWhPerKm),
+    formula: "distance per day × (petrol share × energy per litre ÷ km per litre + electric share × EV energy per km)",
+    note: "MacKay's own method. Petrol holds about 9.5 kWh per litre, but an engine turns only about a quarter of it into motion. An electric car uses about 0.18 kWh/km at the plug, so the same 50 km takes about 9 kWh instead of 40.",
   },
   {
     id: "planes",
@@ -197,13 +199,13 @@ export const PRODUCTION: Line[] = [
     label: "Solar farms (PV)",
     uk: 50,
     params: [
-      { key: "share", label: "share of land", unit: "%", value: 1, step: 0.5 },
+      { key: "share", label: "share of land", unit: "%", value: 5, step: 0.5 },
       { key: "wPerM2", label: "power density", unit: "W/m² of land", value: 12, step: 1 },
     ],
     calc: (p) => wToKwhDay(LAND_PER_PERSON * (p.share / 100) * p.wPerM2),
     landShare: (p) => p.share,
     formula: "land per person × share × power per m² × 24 h",
-    note: "≈ 5.5 kWh/m²/day of sunshine × 20 % panels × panels covering about a third of the ground ≈ 12 W/m². MacKay used 5 W/m² for cloudy Britain.",
+    note: "≈ 5.5 kWh/m²/day of sunshine × 20 % panels × panels covering about a third of the ground ≈ 12 W/m². MacKay covered 5 % of Britain with panels at about 5 W/m² of land; the same 5 % is used here.",
   },
   {
     id: "rooftop",
@@ -341,7 +343,10 @@ export type Values = Record<string, Record<string, number>>
 export const defaults = (lines: Line[]): Values =>
   Object.fromEntries(lines.map((l) => [l.id, Object.fromEntries(l.params.map((p) => [p.key, p.value]))]))
 
-export const evaluate = (lines: Line[], vals: Values) =>
+/** The same consumption with every car-km driven electric (MacKay's chapter on electric cars) */
+export const electrified = (vals: Values): Values => ({ ...vals, car: { ...vals.car, ev: 100 } })
+
+export const evaluate =(lines: Line[], vals: Values) =>
   lines.map((l) => ({ id: l.id, label: l.label, kwh: Math.max(0, l.calc(vals[l.id])) }))
 
 /** Share of South Africa's land built on by the land-based lines, % */
