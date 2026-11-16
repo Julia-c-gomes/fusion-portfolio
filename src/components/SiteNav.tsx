@@ -1,5 +1,6 @@
 import { motion } from "framer-motion"
 import { Atom, LayoutDashboard } from "lucide-react"
+import { useEffect, useState } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 
 import { profile } from "@/content/portfolio"
@@ -10,10 +11,32 @@ const TABS = [
   { to: "/grid", label: "Grid dashboard", short: "Grid", icon: LayoutDashboard },
 ]
 
+/** True once the window has scrolled past a few pixels. */
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+  return scrolled
+}
+
 export function SiteNav() {
   const { pathname } = useLocation()
+  const scrolled = useScrolled()
+  // The portfolio scene sits behind the header on purpose; other pages get a backdrop once content scrolls under it.
+  const backdrop = pathname !== "/" && scrolled
   return (
-    <header className="fixed inset-x-0 top-0 z-40 px-4 pt-[max(14px,env(safe-area-inset-top))] sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-40 px-4 pt-[max(14px,env(safe-area-inset-top))] pb-2.5 sm:px-6">
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-0 -z-10 border-b border-white/[0.07] bg-black/75 backdrop-blur-xl transition-opacity duration-300",
+          backdrop ? "opacity-100" : "opacity-0",
+        )}
+      />
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
         <NavLink to="/" className="group flex min-h-11 items-center gap-3 rounded-full pr-2" aria-label={`${profile.name} portfolio, home`}>
           <img

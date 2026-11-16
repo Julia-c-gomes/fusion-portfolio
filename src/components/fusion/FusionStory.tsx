@@ -11,7 +11,11 @@ import { ProgressRail } from "./ProgressRail"
 
 const N = stages.length
 /** Fraction of each stage's scroll segment where the card is shown; the rest is the transition. */
-const HOLD = 0.5
+const HOLD = 0.7
+/** Point in the transition where the next card starts fading in, so the gap between cards stays short. */
+const LEAD = 0.88
+/** Scroll segment height as a multiple of the viewport height. */
+const SEG_VH = 1
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
   return t * t * (3 - 2 * t)
@@ -28,7 +32,7 @@ const fadeUp = {
 
 /** Scroll segment height in px. Recomputed only on real resizes, not mobile URL-bar jitter. */
 function useSegment() {
-  const [seg, setSeg] = useState(() => Math.max(400, Math.round(window.innerHeight * 1.3)))
+  const [seg, setSeg] = useState(() => Math.max(400, Math.round(window.innerHeight * SEG_VH)))
   useEffect(() => {
     let w = window.innerWidth
     let h = window.innerHeight
@@ -36,7 +40,7 @@ function useSegment() {
       if (window.innerWidth === w && Math.abs(window.innerHeight - h) < 140) return
       w = window.innerWidth
       h = window.innerHeight
-      setSeg(Math.max(400, Math.round(h * 1.3)))
+      setSeg(Math.max(400, Math.round(h * SEG_VH)))
     }
     window.addEventListener("resize", onResize)
     return () => window.removeEventListener("resize", onResize)
@@ -102,9 +106,11 @@ export function FusionStory() {
       const P = s === N - 1 ? N - 1 : s + smooth(HOLD, 1, u)
       engineRef.current?.setProgress(P)
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${Math.min(1, r / (N - 1)).toFixed(4)})`
-      if (counterRef.current) counterRef.current.textContent = String(s + 1).padStart(2, "0")
-      const showCard = u < HOLD * 0.92
-      setView((v) => (v.stage === s && v.showCard === showCard ? v : { stage: s, showCard }))
+      // Near the end of a transition the next stage takes over, so its card fades in as the scene settles.
+      const shown = u >= LEAD && s < N - 1 ? s + 1 : s
+      const showCard = u < HOLD || u >= LEAD
+      if (counterRef.current) counterRef.current.textContent = String(shown + 1).padStart(2, "0")
+      setView((v) => (v.stage === shown && v.showCard === showCard ? v : { stage: shown, showCard }))
     }
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
@@ -126,6 +132,7 @@ export function FusionStory() {
 
   const heroVisible = view.stage === 0 && view.showCard
   const current = stages[view.stage] ?? stages[0]
+  const onContact = view.stage === N - 1
 
   return (
     <div className="relative" style={{ height: (N - 1) * seg + seg * 0.4 + window.innerHeight }}>
@@ -240,6 +247,26 @@ export function FusionStory() {
       </div>
 
       <ProgressRail ref={fillRef} stages={stages} active={view.stage} onSelect={goTo} />
+
+      {/* Shortcut for visitors who want the contact details without the whole sequence */}
+      <motion.a
+        href="#contact"
+        onClick={(e) => {
+          e.preventDefault()
+          goTo(N - 1)
+        }}
+        tabIndex={onContact ? -1 : undefined}
+        aria-hidden={onContact || undefined}
+        className={
+          "glass fixed top-[calc(max(14px,env(safe-area-inset-top))+60px)] right-4 z-30 inline-flex min-h-10 items-center gap-2 rounded-full px-4 font-mono text-[11px] tracking-[0.16em] text-haze uppercase transition-colors duration-300 hover:text-ink focus-visible:text-ink sm:right-6 " +
+          (onContact ? "pointer-events-none" : "")
+        }
+        animate={{ opacity: onContact ? 0 : 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        Skip to contact
+        <ArrowDown className="size-3.5" aria-hidden />
+      </motion.a>
     </div>
   )
 }
