@@ -17,11 +17,6 @@ export const INFO = {
     how: "The latest hour of unplanned capability losses (UCLF) plus other losses outside Eskom's control (OCLF), compared with the same hour 7 days earlier. The tick bar shows it as a share of the highest value in the file (about 15 days).",
     why: "Broken-down capacity can't be dispatched, so it has to be replaced by diesel peakers or by cutting demand. It's the main driver of supply shortfalls.",
   },
-  forecast: {
-    source: `${DEMAND} Series: RSA Contracted Forecast.`,
-    how: "For each upcoming day, the highest forecast hour. The next three days are listed.",
-    why: "Shows when the grid will be tightest, so flexible users can plan heavy loads around those hours.",
-  },
   renew: {
     source: BUILD_UP,
     how: "Wind + solar PV + CSP + other renewables, divided by all energy supplied over the same days. The bar splits renewables into wind, solar (PV + CSP) and other.",
@@ -31,11 +26,6 @@ export const INFO = {
     source: BUILD_UP,
     how: "Hourly output stacked from zero: coal on the bottom; then nuclear, hydro, pumped-storage generation, imports and diesel/gas peakers; then wind, solar and other renewables on top. The big number is total supply in the latest hour; the % compares it with the first hour shown.",
     why: "Shows how the mix shifts through each day: solar fills the middle of the day, and peakers appear at the evening peak.",
-  },
-  demand: {
-    source: `${DEMAND} Series: RSA Contracted Demand and Forecast.`,
-    how: "Actual hourly demand up to the latest published hour, then Eskom's own forecast (lime) for the days ahead. The pills mark the week's peak, the latest hour and the forecast peak.",
-    why: "Comparing what happened with what's coming shows whether the next few days will be tighter or easier than this week.",
   },
   mix: {
     source: BUILD_UP,

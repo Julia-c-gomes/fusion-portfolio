@@ -3,24 +3,21 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import {
   DayCard,
-  ForecastTile,
   OptimiseCard,
   MixCard,
   OutageTile,
   PeakTile,
   RenewTile,
   StreamCard,
-  type StreamMode,
 } from "@/components/dashboard/bento-cards"
 import { BalanceCard } from "@/components/dashboard/BalanceCard"
-import { Seg, Tip, type TipRow, type TipState } from "@/components/ui/finance-bento"
+import { Tip, type TipRow, type TipState } from "@/components/ui/finance-bento"
 import { buildModel, fmtTime, type EskomFile } from "@/lib/eskom"
 import { cn } from "@/lib/utils"
 
 export default function Dashboard() {
   const [file, setFile] = useState<EskomFile | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<StreamMode>("Supply")
   const [shiftMW, setShiftMW] = useState(800)
   const [tip, setTip] = useState<TipState>(null)
   const [entered, setEntered] = useState(false)
@@ -83,7 +80,6 @@ export default function Dashboard() {
             Eskom publishes hourly figures about once a day, usually running 1–2 days behind. This page checks for new data every 6 hours
             {m ? `; it last changed ${new Date(m.generatedAt).toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : "."}
           </p>
-          <Seg label="Stream view" options={["Supply", "Demand"] as const} value={mode} onChange={setMode} />
           {m && (
             <a href={m.portal} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1.5 text-[12.5px] font-medium text-white/60 hover:text-white">
               Source <ExternalLink className="size-3.5" aria-hidden />
@@ -95,17 +91,16 @@ export default function Dashboard() {
           <div className="fb-grid">
             <PeakTile m={m} className="fb-kpi" index={0} />
             <OutageTile m={m} className="fb-kpi" index={1} />
-            <ForecastTile m={m} className="fb-kpi" index={2} />
-            <RenewTile m={m} className="fb-kpi" index={3} />
-            <StreamCard m={m} mode={mode} onTip={onTip} onHide={onHide} className="fb-s8" index={4} />
-            <MixCard m={m} className="fb-s4 fb-half" index={5} />
-            <DayCard m={m} shiftMW={shiftMW} onTip={onTip} onHide={onHide} className="fb-s4 fb-half" index={6} />
-            <OptimiseCard m={m} shiftMW={shiftMW} onShift={setShiftMW} className="fb-s4 fb-half" index={7} />
-            <BalanceCard eskomPerPerson={m.usedPerPerson} className="fb-s4 fb-half" index={8} />
+            <RenewTile m={m} className="fb-kpi" index={2} />
+            <StreamCard m={m} onTip={onTip} onHide={onHide} className="fb-s8" index={3} />
+            <MixCard m={m} className="fb-s4 fb-half" index={4} />
+            <DayCard m={m} shiftMW={shiftMW} onTip={onTip} onHide={onHide} className="fb-s4 fb-half" index={5} />
+            <OptimiseCard m={m} shiftMW={shiftMW} onShift={setShiftMW} className="fb-s4 fb-half" index={6} />
+            <BalanceCard eskomPerPerson={m.usedPerPerson} className="fb-s4 fb-half" index={7} />
           </div>
         ) : (
           <div className="fb-grid" aria-hidden>
-            {["fb-kpi", "fb-kpi", "fb-kpi", "fb-kpi", "fb-s8", "fb-s4", "fb-s4", "fb-s4", "fb-s4"].map((c, i) => (
+            {["fb-kpi", "fb-kpi", "fb-kpi", "fb-s8", "fb-s4", "fb-s4", "fb-s4", "fb-s4"].map((c, i) => (
               <div key={i} className={cn(c, "animate-pulse rounded-[28px] bg-white/[0.06]")} />
             ))}
           </div>

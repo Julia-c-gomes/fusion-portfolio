@@ -108,16 +108,8 @@ export function buildModel(file: EskomFile) {
 
   // ── demand ────────────────────────────────────────────────────
   const actual = demandAll.filter((r) => r.demand != null)
-  const forecast = demandAll.filter((r) => r.forecast != null && r.demand == null)
   const latest = actual.at(-1)
   const peak = actual.reduce<DemandRow | undefined>((m, r) => (!m || v(r.demand) > v(m.demand) ? r : m), undefined)
-  const fPeak = forecast.reduce<DemandRow | undefined>((m, r) => (!m || v(r.forecast) > v(m.forecast) ? r : m), undefined)
-  const demandSeries = demandAll.map((r) => ({ t: r.t, actual: r.demand, forecast: r.forecast }))
-  // stitch the forecast line onto the last actual point so the two read as one story
-  if (latest) {
-    const i = demandSeries.findIndex((p) => p.t === latest.t)
-    if (i >= 0) demandSeries[i] = { ...demandSeries[i], forecast: latest.demand }
-  }
 
   // ── typical day: average demand and PV by hour ───────────────
   const dSum = Array(24).fill(0)
@@ -162,13 +154,6 @@ export function buildModel(file: EskomFile) {
     byDay.set(date, d)
   })
   const peakerDays = [...byDay.values()]
-  const fByDay = new Map<string, DemandRow>()
-  forecast.forEach((r) => {
-    const date = r.t.slice(0, 10)
-    const cur = fByDay.get(date)
-    if (!cur || v(r.forecast) > v(cur.forecast)) fByDay.set(date, r)
-  })
-  const forecastPeaks = [...fByDay.values()].sort((a, b) => (a.t < b.t ? -1 : 1)).slice(0, 3)
   const reSplit = {
     wind: supply.reduce((a, r) => a + pos(r.wind), 0),
     solar: supply.reduce((a, r) => a + pos(r.pv) + pos(r.csp), 0),
@@ -184,7 +169,6 @@ export function buildModel(file: EskomFile) {
   return {
     usedPerPerson,
     peakerDays,
-    forecastPeaks,
     reSplit,
     outageMax,
     demandWeekAgo,
@@ -204,8 +188,6 @@ export function buildModel(file: EskomFile) {
     loadReduction,
     latest,
     peak,
-    fPeak,
-    demandSeries,
     recentDemand: actual.slice(-48).map((r) => ({ t: r.t, v: v(r.demand) })),
     profile,
     peakHour,

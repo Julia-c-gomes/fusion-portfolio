@@ -54,22 +54,17 @@ const COL = { coal: "#A9B2FF", other: "#FFB37A", renew: "#7CEBC4" }
 const shortDay = (t: string) => fmtDay(t).split(" ").slice(0, 2).join(" ").replace(",", "")
 const gw = (mw: number, d = 1) => (mw / 1000).toFixed(d)
 
-/* ───────────── Supply / demand stream (hero) ───────────── */
+/* ───────────── Supply stream (hero) ───────────── */
 
-export type StreamMode = "Supply" | "Demand"
-
-export function StreamCard({ m, mode, onTip, onHide, className, index }: CardProps & { mode: StreamMode }) {
+export function StreamCard({ m, onTip, onHide, className, index }: CardProps) {
   const [ref, { w, h }] = useSize<HTMLDivElement>()
-  const g = useGrow(mode)
+  const g = useGrow(m.generatedAt)
   const maskId = useId().replace(/:/g, "")
 
-  const supply = mode === "Supply"
-  const pts = supply
-    ? m.mix.map((p) => ({ t: p.t, coal: p.coal, other: p.nuclear + p.hydro + p.peakers, renew: p.renewables, fc: false }))
-    : m.demandSeries.map((p) => ({ t: p.t, coal: (p.actual ?? p.forecast ?? 0) as number, other: 0, renew: 0, fc: p.actual == null }))
+  const pts = m.mix.map((p) => ({ t: p.t, coal: p.coal, other: p.nuclear + p.hydro + p.peakers, renew: p.renewables }))
   const tot = (p: (typeof pts)[number]) => p.coal + p.other + p.renew
   const n = pts.length
-  const lastActual = supply ? n - 1 : pts.map((p) => !p.fc).lastIndexOf(true)
+  const lastActual = n - 1
   const latest = pts[lastActual] ? tot(pts[lastActual]) : 0
   const first = pts[0] ? tot(pts[0]) : 0
   const change = first ? ((latest - first) / first) * 100 : 0
@@ -90,10 +85,8 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
   const gridVals = Array.from({ length: Math.floor(ymax / 10000) }, (_, k) => (k + 1) * 10000)
 
   // three annotated moments
-  const peakIdx = tots.slice(0, lastActual + 1).reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0)
-  const fPeakIdx = supply ? -1 : tots.reduce((bi, v, i) => (pts[i].fc && (bi < 0 || v > tots[bi]) ? i : bi), -1)
-  const marks = (supply ? [Math.round((n - 1) * 0.2), peakIdx, n - 1] : [peakIdx, lastActual, fPeakIdx]).filter((i, k, a) => i >= 0 && a.indexOf(i) === k)
-  const splitX = X(lastActual)
+  const peakIdx = tots.reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0)
+  const marks = [Math.round((n - 1) * 0.2), peakIdx, n - 1].filter((i, k, a) => i >= 0 && a.indexOf(i) === k)
 
   const [hover, setHover] = useState<number | null>(null)
   const onMove = (e: PointerEvent<SVGRectElement>) => {
@@ -102,38 +95,24 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
     const i = Math.max(0, Math.min(n - 1, Math.round(((x + 20) / (w + 40)) * (n - 1))))
     const p = pts[i]
     setHover(i)
-    onTip(
-      r.left + X(i),
-      r.top + yOf(tot(p)),
-      fmtTime(p.t),
-      supply
-        ? [
-            ["Wind & solar", `${gw(p.renew)} GW`, COL.renew],
-            ["Nuclear, hydro, imports, peakers", `${gw(p.other)} GW`, COL.other],
-            ["Coal", `${gw(p.coal)} GW`, COL.coal],
-            ["Total", `${gw(tot(p))} GW`],
-          ]
-        : [[p.fc ? "Forecast" : "Actual", `${gw(p.coal)} GW`, p.fc ? ACC : COL.coal]],
-    )
+    onTip(r.left + X(i), r.top + yOf(tot(p)), fmtTime(p.t), [
+      ["Wind & solar", `${gw(p.renew)} GW`, COL.renew],
+      ["Nuclear, hydro, imports, peakers", `${gw(p.other)} GW`, COL.other],
+      ["Coal", `${gw(p.coal)} GW`, COL.coal],
+      ["Total", `${gw(tot(p))} GW`],
+    ])
   }
 
   return (
-    <BentoCard tone="blue" label={`${mode} stream`} className={className} index={index}>
+    <BentoCard tone="blue" label="Supply stream" className={className} index={index}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Head info={supply ? INFO.supply : INFO.demand}>{supply ? "Supply" : "Demand"}</Head>
+        <Head info={INFO.supply}>Supply</Head>
         <Legend
-          items={
-            supply
-              ? [
-                  { label: "Coal", color: COL.coal },
-                  { label: "Nuclear, hydro & peakers", color: COL.other },
-                  { label: "Wind & solar", color: COL.renew },
-                ]
-              : [
-                  { label: "Actual", color: COL.coal },
-                  { label: "Eskom forecast", color: ACC },
-                ]
-          }
+          items={[
+            { label: "Coal", color: COL.coal },
+            { label: "Nuclear, hydro & peakers", color: COL.other },
+            { label: "Wind & solar", color: COL.renew },
+          ]}
         />
       </div>
       <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-1">
@@ -146,13 +125,13 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
             {change >= 0 ? "↑" : "↓"} {Math.abs(change).toFixed(1)}%
           </div>
           <div className="fb-muted mt-0.5">
-            {supply ? "supplied" : "demand"} at {pts[lastActual] ? fmtTime(pts[lastActual].t) : ""} vs start of period
+            supplied at {pts[lastActual] ? fmtTime(pts[lastActual].t) : ""} vs start of period
           </div>
         </div>
       </div>
       <div ref={ref} className="relative -mx-[22px] -mb-5 mt-2 min-h-0 flex-1">
         {w > 0 && h > 0 && (
-          <svg width={w} height={h} className="absolute inset-0 block" role="img" aria-label={supply ? `Hourly supply by source over ${Math.round(m.days)} days, latest ${gw(latest)} gigawatts` : `Hourly demand and Eskom forecast, latest ${gw(latest)} gigawatts`}>
+          <svg width={w} height={h} className="absolute inset-0 block" role="img" aria-label={`Hourly supply by source over ${Math.round(m.days)} days, latest ${gw(latest)} gigawatts`}>
             <defs>
               <linearGradient id={`f${maskId}`} x1="0" x2="1">
                 <stop offset="0" stopColor="#fff" stopOpacity="0" />
@@ -161,12 +140,6 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
               <mask id={`m${maskId}`}>
                 <rect width={w} height={h} fill={`url(#f${maskId})`} />
               </mask>
-              <clipPath id={`a${maskId}`}>
-                <rect x={-30} width={splitX + 30} height={h} />
-              </clipPath>
-              <clipPath id={`b${maskId}`}>
-                <rect x={splitX} width={w - splitX + 30} height={h} />
-              </clipPath>
             </defs>
             {gridVals.map((v) => (
               <g key={v}>
@@ -178,18 +151,9 @@ export function StreamCard({ m, mode, onTip, onHide, className, index }: CardPro
             ))}
             <line x1={0} x2={w} y1={base} y2={base} stroke="rgba(255,255,255,.3)" />
             <g mask={`url(#m${maskId})`}>
-              {supply ? (
-                <>
-                  <path d={band((p) => p.coal + p.other + p.renew)} fill={COL.renew} opacity={0.95} />
-                  <path d={band((p) => p.coal + p.other)} fill={COL.other} />
-                  <path d={band((p) => p.coal)} fill={COL.coal} />
-                </>
-              ) : (
-                <>
-                  <path d={band((p) => p.coal)} fill={COL.coal} clipPath={`url(#a${maskId})`} />
-                  <path d={band((p) => p.coal)} fill={ACC} opacity={0.8} clipPath={`url(#b${maskId})`} />
-                </>
-              )}
+              <path d={band((p) => p.coal + p.other + p.renew)} fill={COL.renew} opacity={0.95} />
+              <path d={band((p) => p.coal + p.other)} fill={COL.other} />
+              <path d={band((p) => p.coal)} fill={COL.coal} />
             </g>
             {marks.map((i, k) => {
               const x = Math.min(w - 40, Math.max(40, X(i)))
@@ -338,28 +302,6 @@ export function OutageTile({ m, className, index }: Omit<CardProps, "onTip" | "o
           <span>15-day high {gw(m.outageMax)} GW</span>
         </div>
         <TickBar fraction={m.outageMax ? latest / m.outageMax : 0} />
-      </div>
-    </BentoCard>
-  )
-}
-
-export function ForecastTile({ m, className, index }: Omit<CardProps, "onTip" | "onHide">) {
-  return (
-    <BentoCard variant="glass" label="Forecast peaks" className={className} index={index}>
-      <div className="flex items-center justify-between gap-2">
-        <Head cap info={INFO.forecast}>Forecast peaks</Head>
-        <span className="fb-mono fb-muted">{m.fPeak ? `${gw(m.fPeak.forecast ?? 0)} GW max` : ""}</span>
-      </div>
-      <div className="mt-2">
-        {m.forecastPeaks.length === 0 && <p className="fb-muted mt-3">Eskom hasn't published a forecast.</p>}
-        {m.forecastPeaks.map((r, i) => (
-          <div key={r.t} className="flex h-[30px] items-center gap-3" style={i ? { borderTop: "1px solid rgba(255,255,255,.08)" } : undefined}>
-            <i className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-semibold not-italic">{fmtDay(r.t).slice(0, 1)}</i>
-            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{fmtDay(r.t)}</span>
-            <span className="fb-mono fb-muted text-[11.5px]">{r.t.slice(11, 16)}</span>
-            <span className="fb-mono w-[62px] text-right text-[13px]">{gw(r.forecast ?? 0)} GW</span>
-          </div>
-        ))}
       </div>
     </BentoCard>
   )

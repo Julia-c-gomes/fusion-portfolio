@@ -256,6 +256,7 @@
 .fb-grid > .fb-kpi { height: 184px; }
 @media (min-width: 640px) {
   .fb-grid > .fb-kpi { grid-column: span 6; }
+  .fb-grid > .fb-kpi:nth-child(3) { grid-column: span 12; }
 }
 @media (min-width: 768px) {
   .fb-grid > .fb-half { grid-column: span 6; }
@@ -267,7 +268,8 @@
   .fb-grid > .fb-s8 { grid-column: span 8; }
   .fb-grid > .fb-s5 { grid-column: span 5; }
   .fb-grid > .fb-s4 { grid-column: span 4; }
-  .fb-grid > .fb-s3, .fb-grid > .fb-kpi { grid-column: span 3; }
+  .fb-grid > .fb-s3 { grid-column: span 3; }
+  .fb-grid > .fb-kpi, .fb-grid > .fb-kpi:nth-child(3) { grid-column: span 4; }
 }
 /* Tall enough: everything fits one screen exactly. */
 @media (min-width: 1200px) and (min-height: 820px) {
