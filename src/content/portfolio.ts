@@ -121,13 +121,12 @@ export const stages: Stage[] = [
     reaction: [D, "+", T],
     card: {
       eyebrow: "04 · Project",
-      title: "Green hydrogen plant design",
+      title: "Aqueous zinc-ion batteries",
       body:
-        "Designed a 20 MW PEM electrolysis plant on the West Coast, from flowsheet through to cost model.",
-      stats: [
-        { value: "R/kg", label: "LCOH modelled" },
-        { value: "20 MW", label: "Electrolyser" },
-        { value: "Aspen", label: "Simulation" },
+        "Research assistant at UCT, working on water-based zinc-ion cells: a cheap, non-flammable route to grid-scale storage. My job was to pin down the zinc plating baseline that later electrolyte work is measured against.",
+      bullets: [
+        "Cyclic voltammetry in a three-electrode cell",
+        "Voltammograms processed and plotted in Python",
       ],
     },
   },
@@ -138,10 +137,10 @@ export const stages: Stage[] = [
     reaction: [D, "+", T, "→", He, "+", NEUTRON],
     card: {
       eyebrow: "05 · Project",
-      title: "Carbon capture solvent study",
+      title: "Carrageenan bioplastics",
       body:
-        "Compared amine solvents for post-combustion CO₂ capture, cutting modelled regeneration energy by optimising stripper conditions.",
-      bullets: ["Rate-based absorber model", "Sensitivity & optimisation in Python"],
+        "My undergraduate thesis looked at how plasticisers change the water-vapour permeability of films made from carrageenan, a seaweed extract, as a biodegradable alternative to petroleum-based packaging.",
+      bullets: ["Self-initiated topic, chosen out of interest", "Biodegradable packaging from seaweed"],
     },
   },
   {
